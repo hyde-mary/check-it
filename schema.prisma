@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["reactNative"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DIRECT_URL")
+}
+
+enum Gender {
+  Male
+  Female
+  Other
+}
+
+enum ActivityLevel {
+  Sedentary
+  LightlyActive
+  HighlyActive
+}
+
+enum Goals {
+  LoseWeight
+  MaintainWeight
+  GainWeight
+}
+
+model User {
+  id             Int                 @id @default(autoincrement())
+  firstName      String              @db.VarChar(80)
+  middleName     String?             @db.VarChar(50)
+  lastName       String              @db.VarChar(50)
+  birthday       DateTime            @db.Date
+  height         Float
+  weight         Float
+  bmi            Float               @default(dbgenerated())
+  gender         Gender
+  activityLevel  ActivityLevel
+  goals          Goals
+  email          String              @unique @db.VarChar(100)
+  password       String              @db.VarChar(255)
+  caloricIntake  UserCaloricIntake?
+  paymentMethods PaymentMethod[]
+  orders         Order[]
+}
+
+model UserCaloricIntake {
+  userId         Int    @id
+  caloricIntake  Int
+  protein        Float
+  carbs          Float
+  fat            Float
+  user           User   @relation(fields: [userId], references: [id])
+}
+
+model Restaurant {
+  id            Int     @id @default(autoincrement())
+  name          String  @unique @db.VarChar(100)
+  location      String  @db.VarChar(255)
+  rating        String? @db.VarChar(50)
+  ratingsCount  String? @db.VarChar(50)
+  img           String? @db.VarChar(255)
+  distance      String? @db.VarChar(50)
+  deliveryTime  String? @db.VarChar(50)
+  about         String? @db.Text
+  foods         Food[]
+  orders        Order[]
+}
+
+model Category {
+  id    Int     @id @default(autoincrement())
+  name  String  @unique @db.VarChar(100)
+  img   String? @db.VarChar(255)
+  foods Food[]
+}
+
+model Food {
+  id           Int       @id @default(autoincrement())
+  name         String    @db.VarChar(100)
+  price        Decimal   @db.Decimal(10, 2)
+  description  String    @db.Text
+  img          String?   @db.VarChar(255)
+  calories     Int
+  protein      Float
+  carbs        Float
+  fat          Float
+  category     Category  @relation(fields: [categoryId], references: [id])
+  categoryId   Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurantId Int
+}
+
+model PaymentMethod {
+  paymentId       Int      @id @default(autoincrement()) @map("payment_id")
+  cardNumber      String   @db.VarChar(16)
+  cardCv          String   @db.VarChar(3)
+  expirationDate  DateTime @db.Date
+  transactionId   String   @unique
+  cardholderName  String   @db.VarChar(100)
+  user            User     @relation(fields: [userId], references: [id])
+  userId          Int
+  orders          Order[]
+}
+
+model Order {
+  orderId      Int           @id @default(autoincrement()) @map("order_id")
+  orderTime    DateTime      @db.Timestamp(6)
+  user         User          @relation(fields: [userId], references: [id])
+  userId       Int
+  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id])
+  restaurantId Int
+  paymentMethod PaymentMethod @relation(fields: [paymentId], references: [paymentId])
+  paymentId    Int
+}

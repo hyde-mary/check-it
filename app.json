@@ -20,7 +20,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.anonymous.checkit"
     },
     "web": {
       "bundler": "metro",
@@ -28,6 +29,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "@prisma/react-native",
       "expo-router"
     ],
     "experiments": {
