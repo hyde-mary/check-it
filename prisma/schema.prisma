@@ -58,11 +58,11 @@ model Restaurant {
   id            Int     @id @default(autoincrement())
   name          String  @unique @db.VarChar(100)
   location      String  @db.VarChar(255)
-  rating        String? @db.VarChar(50)
-  ratingsCount  String? @db.VarChar(50)
+  rating        Float // 4.5
+  ratingsCount  Int // 300
   img           String? @db.VarChar(255)
-  distance      String? @db.VarChar(50)
-  deliveryTime  String? @db.VarChar(50)
+  distance      Float // in km
+  deliveryTime  Int // in minutes
   about         String? @db.Text
   foods         Food[]
   orders        Order[]
