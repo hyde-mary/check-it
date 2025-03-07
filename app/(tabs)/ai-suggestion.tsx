@@ -10,6 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getUserInfo } from "@/utils/sessionManager";
 
 interface UserData {
   user_id: number;
@@ -42,13 +43,64 @@ interface FoodItem {
 }
 
 export default function AiSuggestion() {
-  const [macros, setMacros] = useState<Macros | null>(null);
-  const [foods, setFoods] = useState<FoodItem[] | null>(null);
-  const [userData, setUserData] = useState<UserData | null>(null);
+  const [userCalories, setUserCalories] = useState<{
+    caloricIntake: number;
+    carbs: number;
+    fat: number;
+    protein: number;
+    userId: number;
+  } | null>(null);
+
+  const [userData, setUserData] = useState<{
+    id: number;
+    firstName: string;
+    middleName: null;
+    lastName: string;
+    email: string;
+    gender: string;
+    birthday: string;
+    bmi: number;
+    height: number;
+    weight: number;
+    activityLevel: string;
+    goals: string;
+  } | null>(null);
+
   const [suggestion, setSuggestion] = useState<string>("");
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
+
+  useEffect(() => {
+    fetchUserCalories(2);
+    fetchUserInfo();
+  }, []);
+
+  const fetchUserCalories = async (userId: Number) => {
+    try {
+      const response = await fetch(
+        "http://10.0.2.2:3000/calories/userCalories",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId }),
+        }
+      );
+
+      const data = await response.json();
+      setUserCalories(data);
+    } catch (error) {
+      console.error("Error fetching user calories:", error);
+    }
+  };
+
+  const fetchUserInfo = async () => {
+    const userInfo = await getUserInfo();
+    if (!userInfo) return null;
+    setUserData(userInfo);
+  };
+
+  if (!userData || !userCalories) return null;
 
   return (
     <LinearGradient colors={["#F7F9FC", "#EFF2F7"]} style={styles.container}>
@@ -58,7 +110,7 @@ export default function AiSuggestion() {
       >
         {/* User Header */}
         <View style={styles.userHeader}>
-          <Text style={styles.greeting}>Hello, {userData?.first_name}!</Text>
+          <Text style={styles.greeting}>Hello, {userData.firstName}!</Text>
         </View>
 
         {/* User Status Section */}
@@ -66,12 +118,9 @@ export default function AiSuggestion() {
           <Text style={styles.cardTitle}>Current Status</Text>
           <View style={styles.statusGrid}>
             <StatusItem label="Goal" value={userData?.goals} />
-            <StatusItem
-              label="Activity Level"
-              value={userData?.activity_level}
-            />
-            <StatusItem label="Weight" value={`${userData?.weight} kg`} />
-            <StatusItem label="Height" value={`${userData?.height} cm`} />
+            <StatusItem label="Activity Level" value={userData.activityLevel} />
+            <StatusItem label="Weight" value={`${userData.weight} kg`} />
+            <StatusItem label="Height" value={`${userData.height} cm`} />
           </View>
         </View>
 
@@ -79,7 +128,7 @@ export default function AiSuggestion() {
         <View style={styles.calorieCard}>
           <Text style={styles.calorieLabel}>Daily Caloric Needs</Text>
           <Text style={styles.calorieValue}>
-            {macros?.caloric_intake || "--"}
+            {userCalories.caloricIntake || "--"}
             <Text style={styles.calorieUnit}> kcal</Text>
           </Text>
         </View>
@@ -90,19 +139,19 @@ export default function AiSuggestion() {
           <View style={styles.macrosContainer}>
             <MacroPill
               label="Protein"
-              value={macros?.protein || 0}
+              value={parseFloat(userCalories.fat.toFixed(2)) || 0}
               unit="g"
               color="#B03A2E"
             />
             <MacroPill
               label="Carbs"
-              value={macros?.carbs || 0}
+              value={parseFloat(userCalories.fat.toFixed(2)) || 0}
               unit="g"
               color="#F5A623"
             />
             <MacroPill
               label="Fat"
-              value={macros?.fat || 0}
+              value={parseFloat(userCalories.fat.toFixed(2)) || 0}
               unit="g"
               color="#50E3C2"
             />
@@ -168,7 +217,8 @@ export default function AiSuggestion() {
             )}
 
             <Text style={styles.disclaimer}>
-              Based on your daily needs of {macros?.caloric_intake} calories
+              Based on your daily needs of{" "}
+              {userCalories.caloricIntake.toFixed(2)} calories
             </Text>
           </View>
         )}
