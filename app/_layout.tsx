@@ -89,6 +89,13 @@ function RootLayoutNav() {
           name="landing"
           options={{ title: "Hello, Welcome to Check It" }}
         />
+        <Stack.Screen name="(auth)/register" options={{ title: "Register" }} />
+        <Stack.Screen name="(auth)/login" options={{ title: "Login" }} />
+        <Stack.Screen
+          name="(auth)/activity-level"
+          options={{ title: "Activity Level" }}
+        />
+        <Stack.Screen name="(auth)/user-goals" options={{ title: "Goals" }} />
         <Stack.Screen name="modal" options={{ presentation: "modal" }} />
       </Stack>
     </ThemeProvider>
