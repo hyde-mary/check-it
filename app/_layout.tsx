@@ -61,6 +61,8 @@ function RootLayoutNav() {
   const rootNavigationState = useRootNavigationState();
   const [loading, setLoading] = useState(true);
 
+  // AsyncStorage.removeItem(TOKEN_KEY);
+
   useEffect(() => {
     const checkAuth = async () => {
       try {

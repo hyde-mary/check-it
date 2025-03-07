@@ -12,6 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import DashboardView from "@/components/views/dashboard-view";
 import OrdersView from "@/components/views/orders-view";
 import AddressesView from "@/components/views/addresses-view";
+import { getUserInfo } from "@/utils/sessionManager";
 
 export default function TabTwoScreen() {
   const [selected, setSelected] = useState<
@@ -25,8 +26,24 @@ export default function TabTwoScreen() {
     userId: number;
   } | null>(null);
 
+  const [userData, setUserData] = useState<{
+    id: number;
+    firstName: string;
+    middleName: null;
+    lastName: string;
+    email: string;
+    gender: string;
+    birthday: string;
+    bmi: number;
+    height: number;
+    weight: number;
+    activityLevel: string;
+    goals: string;
+  } | null>(null);
+
   useEffect(() => {
     fetchUserCalories(2);
+    fetchUserInfo();
   }, []);
 
   const fetchUserCalories = async (userId: Number) => {
@@ -47,6 +64,14 @@ export default function TabTwoScreen() {
     }
   };
 
+  const fetchUserInfo = async () => {
+    const userInfo = await getUserInfo();
+    if (!userInfo) return null;
+    setUserData(userInfo);
+  };
+
+  if (!userData) return null;
+
   return (
     <LinearGradient colors={["#ffe6e6", "#ff9999"]} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -62,12 +87,12 @@ export default function TabTwoScreen() {
             >
               <Ionicons name="person-circle" size={40} color="white" />
               <View style={styles.profileTextContainer}>
-                {/* <Text style={styles.profileName}>
+                <Text style={styles.profileName}>
                   {userData
-                    ? `${userData.first_name} ${userData.last_name}`
+                    ? `${userData.firstName} ${userData.lastName}`
                     : "User"}
                 </Text>
-                <Text style={styles.profileEmail}>{user?.email}</Text> */}
+                <Text style={styles.profileEmail}>{userData.email}</Text>
               </View>
               <Ionicons
                 name="chevron-forward"
