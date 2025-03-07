@@ -5,12 +5,15 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Stack, useRouter } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/components/useColorScheme";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+import { useRootNavigationState, Redirect } from "expo-router";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -24,6 +27,8 @@ export const unstable_settings = {
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+const TOKEN_KEY = "authToken";
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -52,10 +57,29 @@ export default function RootLayout() {
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const router = useRouter();
+  const segments = useSegments();
+  const rootNavigationState = useRootNavigationState();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    router.replace("/landing");
-  });
+    const checkAuth = async () => {
+      try {
+        const token = await AsyncStorage.getItem(TOKEN_KEY);
+
+        if (!token) {
+          router.replace("/landing");
+        } else if (token) {
+          router.replace("/");
+        }
+      } catch (error) {
+        console.error("Error checking auth:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>

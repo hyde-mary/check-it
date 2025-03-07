@@ -15,6 +15,8 @@ import { Link } from "expo-router";
 import Colors from "../../constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { saveToken } from "../../utils/sessionManager";
+import { router } from "expo-router";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -42,9 +44,9 @@ export default function Login() {
       const data = await response.json();
 
       if (response.ok) {
-        console.log("Token:", data.token);
         Alert.alert("Success", "Login successful!");
-        // TODO: Store token in AsyncStorage or SecureStore for later use
+        await saveToken(data.token);
+        router.replace("/");
       } else {
         setError(data.error || "Invalid credentials. Please try again.");
       }
