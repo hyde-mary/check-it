@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,35 @@ export default function TabTwoScreen() {
   const [selected, setSelected] = useState<
     "Dashboard" | "Orders" | "Addresses"
   >("Dashboard");
+  const [userCalories, setUserCalories] = useState<{
+    caloricIntake: number;
+    carbs: number;
+    fat: number;
+    protein: number;
+    userId: number;
+  } | null>(null);
+
+  useEffect(() => {
+    fetchUserCalories(2);
+  }, []);
+
+  const fetchUserCalories = async (userId: Number) => {
+    try {
+      const response = await fetch(
+        "http://10.0.2.2:3000/calories/userCalories",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId }),
+        }
+      );
+
+      const data = await response.json();
+      setUserCalories(data);
+    } catch (error) {
+      console.error("Error fetching user calories:", error);
+    }
+  };
 
   return (
     <LinearGradient colors={["#ffe6e6", "#ff9999"]} style={styles.container}>
@@ -83,7 +112,9 @@ export default function TabTwoScreen() {
           ))}
         </View>
         <View style={styles.contentContainer}>
-          {selected === "Dashboard" && <DashboardView />}
+          {selected === "Dashboard" && (
+            <DashboardView userCalories={userCalories} />
+          )}
           {selected === "Orders" && <OrdersView />}
           {selected === "Addresses" && <AddressesView />}
         </View>

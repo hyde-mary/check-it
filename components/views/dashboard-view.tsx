@@ -2,21 +2,25 @@ import React from "react";
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
-type UserMacrosType = {
+type userCaloriesType = {
   calories: number;
   carbs: number;
   fat: number;
   protein: number;
 };
 
-const DashboardView = () => {
-  //   if (!userMacros) {
-  //     return (
-  //       <View style={styles.container}>
-  //         <Text style={styles.subtitle}>Loading macros...</Text>
-  //       </View>
-  //     );
-  //   }
+const DashboardView = ({
+  userCalories,
+}: {
+  userCalories: {
+    caloricIntake: number;
+    carbs: number;
+    fat: number;
+    protein: number;
+    userId: number;
+  } | null;
+}) => {
+  if (!userCalories) return;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -29,34 +33,34 @@ const DashboardView = () => {
       <Text style={styles.dailyIntake}>
         You need this amount of macros for today:
       </Text>
-      {/* <View style={styles.macrosContainer}>
+      <View style={styles.macrosContainer}>
         {[
           {
             name: "Calories",
-            value: userMacros.calories,
+            value: userCalories.caloricIntake.toFixed(2),
             unit: "",
-            icon: "fire",
+            icon: "fire" as const,
             color: "#ff4500",
           },
           {
             name: "Carbs",
-            value: userMacros.carbs,
+            value: userCalories.carbs.toFixed(2),
             unit: "g",
-            icon: "barley",
+            icon: "barley" as const,
             color: "#f4a261",
           },
           {
             name: "Fat",
-            value: userMacros.fat,
+            value: userCalories.fat.toFixed(2),
             unit: "g",
-            icon: "water",
+            icon: "water" as const,
             color: "#2a9d8f",
           },
           {
             name: "Protein",
-            value: userMacros.protein,
+            value: userCalories.protein.toFixed(2),
             unit: "g",
-            icon: "food-drumstick",
+            icon: "food-drumstick" as const,
             color: "#e76f51",
           },
         ].map((macro, index) => (
@@ -73,7 +77,7 @@ const DashboardView = () => {
             </Text>
           </View>
         ))}
-      </View> */}
+      </View>
       <Text style={styles.sectionTitle}>What These Macros Do</Text>
       <View style={styles.descriptionSection}>
         {[
