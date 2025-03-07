@@ -1,3 +1,4 @@
+import { useRegisterStore } from "@/store/useRegisterStore";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, router } from "expo-router";
@@ -25,37 +26,38 @@ export default function Register() {
   const [weight, setWeight] = useState("");
   const [gender, setGender] = useState("Male");
 
+  const updateUserData = useRegisterStore((state) => state.updateUserData);
+
   const handleRegister = async () => {
-    // if (
-    //   !firstName ||
-    //   !lastName ||
-    //   !email ||
-    //   !password ||
-    //   !confirmPassword ||
-    //   !birthday ||
-    //   !height ||
-    //   !weight
-    // ) {
-    //   Alert.alert("Error", "Please fill in all required fields.");
-    //   return;
-    // }
+    if (
+      !firstName ||
+      !lastName ||
+      !email ||
+      !password ||
+      !confirmPassword ||
+      !birthday ||
+      !height ||
+      !weight
+    ) {
+      Alert.alert("Error", "Please fill in all required fields.");
+      return;
+    }
 
-    // if (password !== confirmPassword) {
-    //   Alert.alert("Error", "Passwords do not match.");
-    //   return;
-    // }
+    if (password !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match.");
+      return;
+    }
 
-    // // use this to updateUserData
-    // updateUserData({
-    //   first_name: firstName,
-    //   last_name: lastName,
-    //   email,
-    //   password,
-    //   birthday,
-    //   height,
-    //   weight,
-    //   gender,
-    // });
+    updateUserData({
+      firstName,
+      lastName,
+      email,
+      password,
+      birthday,
+      height: Number(height),
+      weight: Number(weight),
+      gender,
+    });
 
     router.push("/activity-level");
   };

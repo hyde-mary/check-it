@@ -11,7 +11,7 @@ import {
   Platform,
 } from "react-native";
 import { Link } from "expo-router";
-import Colors from "../constants/Colors";
+import Colors from "../../constants/Colors";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 

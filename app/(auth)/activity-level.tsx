@@ -7,121 +7,102 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
+import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { useRegisterStore } from "@/store/useRegisterStore";
 
-export default function UserGoals() {
-  const [selectedGoal, setSelectedGoal] = useState("");
-
-  const goals: {
+export default function ActivityLevel() {
+  const [selectedActivity, setSelectedActivity] = useState("");
+  const updateUserData = useRegisterStore((state) => state.updateUserData);
+  const activities: {
     title: string;
     description: string;
     icon: keyof typeof Ionicons.glyphMap;
   }[] = [
     {
-      title: "Lose Weight",
-      icon: "trending-down",
-      description: "Burn fat and reduce body weight",
+      title: "Sedentary",
+      description: "Little or no exercise",
+      icon: "bed-outline",
     },
     {
-      title: "Maintain Weight",
+      title: "Lightly Active",
+      description: "Light exercise 1-3 days/week",
+      icon: "walk-outline",
+    },
+    {
+      title: "Highly Active",
+      description: "Intense exercise 6-7 days/week",
       icon: "barbell-outline",
-      description: "Keep current weight with balanced nutrition",
-    },
-    {
-      title: "Gain Weight",
-      icon: "trending-up",
-      description: "Build muscle mass and increase calorie intake",
     },
   ];
 
   const handleSubmit = async () => {
-    // if (!selectedGoal) {
-    //   Alert.alert("Error", "Please select a goal before proceeding.");
-    //   return;
-    // }
-    // try {
-    //   const response = await fetch(`${BASE_URL}/api.php?table=users`, {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({
-    //       ...userData,
-    //       goals: selectedGoal,
-    //     }),
-    //   });
-    //   if (response.ok) {
-    //     const responseText = await response.text();
-    //     console.log(responseText);
-    //     const responseData = JSON.parse(responseText);
-    //     if (responseData) {
-    //       await login(responseData.user);
-    //       Alert.alert("Success", "Registration completed!", [
-    //         { text: "OK", onPress: () => router.push("/") },
-    //       ]);
-    //     } else {
-    //       Alert.alert("Something went wrong, contact the admins!");
-    //     }
-    //   }
-    // } catch (error) {
-    //   console.error("API Error [userGoals.tsx]:", error);
-    //   Alert.alert("Error", "Something went wrong. Please try again.");
-    // }
+    if (!selectedActivity) {
+      return Alert.alert("Error", "Please select your activity level.");
+    }
+
+    const formattedActivity = selectedActivity.replace(/\s+/g, "");
+
+    updateUserData({ activityLevel: formattedActivity });
+    router.push("/user-goals");
   };
 
   return (
     <LinearGradient colors={["#ffe6e6", "#ff9999"]} style={styles.gradient}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
-          <Ionicons name="ribbon-outline" size={48} color="#6B7280" />
-          <Text style={styles.title}>Your Fitness Goal</Text>
-          <Text style={styles.subtitle}>What's your primary objective?</Text>
+          <Ionicons name="fitness-outline" size={48} color="#6B7280" />
+          <Text style={styles.title}>Activity Level</Text>
+          <Text style={styles.subtitle}>How active are you daily?</Text>
         </View>
 
         <View style={styles.formContainer}>
-          {goals.map((goal) => (
+          {activities.map((activity) => (
             <TouchableOpacity
-              key={goal.title}
+              key={activity.title}
               style={[
-                styles.goalCard,
-                selectedGoal === goal.title && styles.selectedCard,
+                styles.optionCard,
+                selectedActivity === activity.title && styles.selectedCard,
               ]}
-              onPress={() => setSelectedGoal(goal.title)}
+              onPress={() => setSelectedActivity(activity.title)}
             >
               <Ionicons
-                name={goal.icon}
+                name={activity.icon}
                 size={28}
-                color={selectedGoal === goal.title ? "white" : "#ff9999"}
-                style={styles.goalIcon}
+                color={
+                  selectedActivity === activity.title ? "white" : "#ff9999"
+                }
+                style={styles.activityIcon}
               />
               <View style={styles.textContainer}>
                 <Text
                   style={[
-                    styles.goalTitle,
-                    selectedGoal === goal.title && styles.selectedText,
+                    styles.optionTitle,
+                    selectedActivity === activity.title && styles.selectedText,
                   ]}
                 >
-                  {goal.title}
+                  {activity.title}
                 </Text>
                 <Text
                   style={[
-                    styles.goalDescription,
-                    selectedGoal === goal.title && styles.selectedText,
+                    styles.optionDescription,
+                    selectedActivity === activity.title && styles.selectedText,
                   ]}
                 >
-                  {goal.description}
+                  {activity.description}
                 </Text>
               </View>
             </TouchableOpacity>
           ))}
 
           <TouchableOpacity
-            style={[styles.button, !selectedGoal && styles.disabledButton]}
             onPress={handleSubmit}
-            disabled={!selectedGoal}
+            style={[styles.button, !selectedActivity && styles.disabledButton]}
+            disabled={!selectedActivity}
           >
-            <Text style={styles.buttonText}>Complete Registration</Text>
-            <Ionicons name="checkmark-circle" size={20} color="white" />
+            <Text style={styles.buttonText}>Continue</Text>
+            <Ionicons name="arrow-forward" size={20} color="white" />
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -163,7 +144,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 5,
   },
-  goalCard: {
+  optionCard: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff0f0",
@@ -177,19 +158,19 @@ const styles = StyleSheet.create({
     backgroundColor: "#ff9999",
     borderColor: "#ff6666",
   },
-  goalIcon: {
+  activityIcon: {
     marginRight: 16,
   },
   textContainer: {
     flex: 1,
   },
-  goalTitle: {
+  optionTitle: {
     fontSize: 18,
     fontWeight: "600",
     color: "#1F2937",
     marginBottom: 4,
   },
-  goalDescription: {
+  optionDescription: {
     fontSize: 14,
     color: "#6B7280",
   },
