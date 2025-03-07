@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
 import { Link } from "expo-router";
 import Colors from "../../constants/Colors";
@@ -19,11 +20,40 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = () => {
-    console.log("Hello World");
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setError("Please fill in all fields.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch("http://10.0.2.2:3000/user/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log("Token:", data.token);
+        Alert.alert("Success", "Login successful!");
+        // TODO: Store token in AsyncStorage or SecureStore for later use
+      } else {
+        setError(data.error || "Invalid credentials. Please try again.");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setError("Failed to connect to the server.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -89,11 +119,11 @@ export default function Login() {
             </View>
 
             <TouchableOpacity
-              style={[styles.button, isLoading && styles.disabledButton]}
+              style={[styles.button, loading && styles.disabledButton]}
               onPress={handleLogin}
-              disabled={isLoading}
+              disabled={loading}
             >
-              {isLoading ? (
+              {loading ? (
                 <ActivityIndicator color="white" />
               ) : (
                 <Text style={styles.buttonText}>Sign In</Text>
