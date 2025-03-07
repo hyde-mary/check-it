@@ -13,6 +13,7 @@ import DashboardView from "@/components/views/dashboard-view";
 import OrdersView from "@/components/views/orders-view";
 import AddressesView from "@/components/views/addresses-view";
 import { getUserInfo } from "@/utils/sessionManager";
+import { User } from "@prisma/client";
 
 export default function Dashboard() {
   const [selected, setSelected] = useState<
@@ -26,20 +27,7 @@ export default function Dashboard() {
     userId: number;
   } | null>(null);
 
-  const [userData, setUserData] = useState<{
-    id: number;
-    firstName: string;
-    middleName: null;
-    lastName: string;
-    email: string;
-    gender: string;
-    birthday: string;
-    bmi: number;
-    height: number;
-    weight: number;
-    activityLevel: string;
-    goals: string;
-  } | null>(null);
+  const [userData, setUserData] = useState<Omit<User, "password"> | null>(null);
 
   useEffect(() => {
     fetchUserCalories(2);

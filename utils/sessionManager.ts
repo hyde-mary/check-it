@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { User } from "@prisma/client";
 
 const TOKEN_KEY = "authToken";
 const USER_INFO_KEY = "userInfo";
@@ -48,20 +49,7 @@ export const saveUserInfo = async (userInfo: object) => {
 };
 
 // get user info
-export const getUserInfo = async (): Promise<{
-  id: number;
-  firstName: string;
-  middleName: null;
-  lastName: string;
-  email: string;
-  gender: string;
-  birthday: string;
-  bmi: number;
-  height: number;
-  weight: number;
-  activityLevel: string;
-  goals: string;
-} | null> => {
+export const getUserInfo = async (): Promise<Omit<User, "password"> | null> => {
   try {
     const jsonValue = await AsyncStorage.getItem(USER_INFO_KEY);
     return jsonValue ? JSON.parse(jsonValue) : null;

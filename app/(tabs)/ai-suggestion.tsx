@@ -9,38 +9,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getUserInfo } from "@/utils/sessionManager";
-
-interface UserData {
-  user_id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  height: number;
-  weight: number;
-  bmi: number;
-  gender: string;
-  activity_level: string;
-  goals: string;
-}
-
-interface Macros {
-  caloric_intake: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-}
-
-interface FoodItem {
-  food_id: string;
-  food_name: string;
-  calories: string;
-  protein: string;
-  carbs: string;
-  fat: string;
-  restaurant_name: string;
-}
+import { User } from "@prisma/client";
 
 export default function AiSuggestion() {
   const [userCalories, setUserCalories] = useState<{
@@ -51,20 +21,7 @@ export default function AiSuggestion() {
     userId: number;
   } | null>(null);
 
-  const [userData, setUserData] = useState<{
-    id: number;
-    firstName: string;
-    middleName: null;
-    lastName: string;
-    email: string;
-    gender: string;
-    birthday: string;
-    bmi: number;
-    height: number;
-    weight: number;
-    activityLevel: string;
-    goals: string;
-  } | null>(null);
+  const [userData, setUserData] = useState<Omit<User, "password"> | null>(null);
 
   const [suggestion, setSuggestion] = useState<string>("");
 
@@ -98,6 +55,36 @@ export default function AiSuggestion() {
     const userInfo = await getUserInfo();
     if (!userInfo) return null;
     setUserData(userInfo);
+  };
+
+  const fetchMealSuggestion = async () => {
+    if (!userData || !userCalories) return null;
+
+    try {
+      setIsSuggesting(true);
+
+      const response = await fetch("http://10.0.2.2:3000/meal/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: userData.id }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const mealSuggestion = await response.json();
+      console.log(mealSuggestion);
+    } catch (error) {
+      console.error(
+        "Sorry, the server is busy. Please try again later.",
+        error
+      );
+    } finally {
+      setIsSuggesting(false);
+    }
   };
 
   if (!userData || !userCalories) return null;
@@ -161,7 +148,7 @@ export default function AiSuggestion() {
         {/* Suggestion Section */}
         <TouchableOpacity
           style={[styles.button, isSuggesting && styles.disabledButton]}
-          onPress={() => console.log("Fetch Suggestions")}
+          onPress={() => fetchMealSuggestion()}
           disabled={isSuggesting}
         >
           {isSuggesting ? (
