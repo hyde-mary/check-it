@@ -14,7 +14,7 @@ import OrdersView from "@/components/views/orders-view";
 import AddressesView from "@/components/views/addresses-view";
 import { getUserInfo } from "@/utils/sessionManager";
 
-export default function TabTwoScreen() {
+export default function Dashboard() {
   const [selected, setSelected] = useState<
     "Dashboard" | "Orders" | "Addresses"
   >("Dashboard");

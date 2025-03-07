@@ -52,9 +52,18 @@ export default function TabLayout() {
       <Tabs.Screen
         name="ai-suggestion"
         options={{
-          title: "AI Recommendation",
+          title: "AI",
           tabBarIcon: ({ color }) => (
             <Ionicons name="nutrition-outline" size={25} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="person-outline" size={25} color={color} />
           ),
         }}
       />
