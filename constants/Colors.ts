@@ -29,4 +29,6 @@ export default {
   success: "#4CAF50",
   warning: "#F4A261",
   error: "#E63946",
+
+  green: "#437919",
 };
