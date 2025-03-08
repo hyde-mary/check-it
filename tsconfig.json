@@ -13,6 +13,7 @@
     "expo-env.d.ts",
     "backend/src/server.js",
     "backend/src/controllers/foodController.js",
-    "backend/src/routes/foodRoutes.js"
+    "backend/src/routes/foodRoutes.js",
+    "components/scrolls/ParallaxScrollView.js"
   ]
 }

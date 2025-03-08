@@ -65,9 +65,6 @@ export default function Page() {
     }
   };
 
-  console.log("Restaurants: ", restaurants);
-  console.log("Categories: ", categories);
-
   if (!categories || !restaurants) return <DotsLoader />;
 
   return (

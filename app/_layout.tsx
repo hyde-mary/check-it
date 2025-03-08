@@ -170,7 +170,7 @@ function RootLayoutNav() {
                     padding: 6,
                   }}
                   onPress={() => {
-                    router.push("/");
+                    router.back();
                   }}
                 >
                   <Ionicons
