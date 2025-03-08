@@ -25,6 +25,9 @@ const getFoodFromRestaurant = async (req, res) => {
       where: {
         restaurantId,
       },
+      include: {
+        category: true,
+      },
     });
 
     res.json(foods);
