@@ -17,6 +17,7 @@ import SwipeableRow from "@/components/SwipeableRow";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "react-native";
 import getImageSrc from "@/utils/getImageSrc";
+import { getUserInfo } from "@/utils/sessionManager";
 
 const Basket = () => {
   const {
@@ -30,6 +31,9 @@ const Basket = () => {
   } = useBasketStore();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [orderCompleted, setOrderCompleted] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<"cash" | "card">(
+    "cash"
+  );
 
   const FEES = {
     service: 2.99,
@@ -45,7 +49,53 @@ const Basket = () => {
   };
 
   const handleCheckout = async () => {
-    console.log(foods);
+    try {
+      setIsCheckingOut(true);
+
+      const userInfo = await getUserInfo();
+
+      if (!userInfo) {
+        console.error("User not found");
+        setIsCheckingOut(false);
+        return;
+      }
+
+      if (!foods) {
+        throw new Error("No food detected!");
+      }
+
+      const foodItems = foods.map((item) => ({
+        foodId: item.id,
+        quantity: item.quantity,
+      }));
+
+      // console.log(
+      //   JSON.stringify({
+      //     userId: userInfo.id,
+      //     foodItems,
+      //   })
+      // );
+
+      const response = await fetch("http://10.0.2.2:3000/order/orderFood", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: userInfo.id,
+          foodItems,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Network Error");
+      }
+    } catch (error) {
+      console.error("Error during checkout:", error);
+      setIsCheckingOut(false);
+    } finally {
+      setIsCheckingOut(false);
+    }
   };
 
   if (orderCompleted) {
@@ -134,6 +184,40 @@ const Basket = () => {
                     {formatCurrency(calculateTotal())}
                   </Text>
                 </View>
+
+                {/* Add Payment Method Section */}
+                <View style={styles.paymentSection}>
+                  <Text style={styles.paymentTitle}>Payment Method</Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.paymentOption,
+                      selectedPayment === "cash" && styles.selectedPayment,
+                    ]}
+                    onPress={() => setSelectedPayment("cash")}
+                  >
+                    <Ionicons
+                      name="cash-outline"
+                      size={20}
+                      color={Colors.primary}
+                    />
+                    <Text style={styles.paymentText}>Cash on Delivery</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.paymentOption,
+                      selectedPayment === "card" && styles.selectedPayment,
+                    ]}
+                    onPress={() => setSelectedPayment("card")}
+                  >
+                    <Ionicons
+                      name="card-outline"
+                      size={20}
+                      color={Colors.primary}
+                    />
+                    <Text style={styles.paymentText}>Credit/Debit Card</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             }
           />
@@ -203,7 +287,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     padding: 16,
     borderTopWidth: 1,
-    paddingBottom: 52,
+    paddingBottom: 70,
     borderTopColor: Colors.lightGrey,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
@@ -346,16 +430,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  fixedFooter: {
+  paymentSection: {
     backgroundColor: "#fff",
     padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: Colors.lightGrey,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    marginTop: 8,
+  },
+  paymentTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.primary,
+    marginBottom: 12,
+  },
+  paymentOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.lightGrey,
+    marginBottom: 10,
+    gap: 10,
+  },
+  selectedPayment: {
+    borderColor: Colors.primary,
+    backgroundColor: "#f7f7ff",
+  },
+  paymentText: {
+    fontSize: 16,
+    color: Colors.medium,
   },
 });
 
