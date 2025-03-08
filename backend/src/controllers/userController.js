@@ -171,6 +171,9 @@ const update = async (req, res) => {
       weight,
       activityLevel,
       goals,
+      cardNumber,
+      expiryDate,
+      cvc,
     } = req.body;
 
     id = Number(id);
@@ -179,7 +182,6 @@ const update = async (req, res) => {
     }
 
     const user = await prisma.user.findUnique({ where: { id } });
-
     if (!user) {
       return res.status(404).json({ error: "User not found!" });
     }
@@ -187,7 +189,6 @@ const update = async (req, res) => {
     const emailExists = await prisma.user.findFirst({
       where: { email, NOT: { id } },
     });
-
     if (emailExists) {
       return res.status(400).json({ error: "Email is already in use." });
     }
@@ -220,6 +221,35 @@ const update = async (req, res) => {
       create: { userId: id, caloricIntake, protein, carbs, fat },
     });
 
+    let paymentOption = null;
+    if (cardNumber && expiryDate && cvc) {
+      const existingPaymentOption = await prisma.paymentOption.findFirst({
+        where: { userId: id },
+      });
+
+      if (existingPaymentOption) {
+        paymentOption = await prisma.paymentOption.update({
+          where: { id: existingPaymentOption.id },
+          data: {
+            cardNumber,
+            cardCv: cvc,
+            expirationDate: new Date(expiryDate),
+            cardholderName: `${updatedUser.firstName} ${updatedUser.lastName}`,
+          },
+        });
+      } else {
+        paymentOption = await prisma.paymentOption.create({
+          data: {
+            cardNumber,
+            cardCv: cvc,
+            expirationDate: new Date(expiryDate),
+            cardholderName: `${updatedUser.firstName} ${updatedUser.lastName}`,
+            userId: id,
+          },
+        });
+      }
+    }
+
     res.json({
       message: "Update successful",
       updatedUser: {
@@ -233,6 +263,15 @@ const update = async (req, res) => {
         goals: updatedUser.goals,
       },
       caloricIntake: { caloricIntake, protein, carbs, fat },
+      paymentOption: paymentOption
+        ? {
+            paymentId: paymentOption.id,
+            cardNumber: paymentOption.cardNumber,
+            cardCv: paymentOption.cardCv,
+            expirationDate: paymentOption.expirationDate,
+            cardholderName: paymentOption.cardholderName,
+          }
+        : null,
     });
   } catch (error) {
     console.error("Update error: ", error);

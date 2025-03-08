@@ -42,6 +42,7 @@ model User {
   password       String             @db.VarChar(255)
   caloricIntake  UserCaloricIntake?
   paymentMethods PaymentMethod[]
+  paymentOptions PaymentOption[]
   orders         Order[]
 }
 
@@ -93,7 +94,7 @@ model Food {
 }
 
 model PaymentMethod {
-  paymentId      Int      @id @default(autoincrement()) @map("payment_id")
+  paymentId      Int      @id @default(autoincrement())
   cardNumber     String   @db.VarChar(16)
   cardCv         String   @db.VarChar(3)
   expirationDate DateTime @db.Date
@@ -114,7 +115,7 @@ model OrderItem {
 }
 
 model Order {
-  orderId       Int           @id @default(autoincrement()) @map("order_id")
+  orderId       Int           @id @default(autoincrement())
   orderTime     DateTime      @default(now()) @db.Timestamp(6)
   user          User          @relation(fields: [userId], references: [id])
   userId        Int
@@ -123,4 +124,17 @@ model Order {
   paymentMethod PaymentMethod @relation(fields: [paymentId], references: [paymentId])
   paymentId     Int
   orderItems    OrderItem[]
+}
+
+model PaymentOption {
+  id              Int      @id @default(autoincrement())
+  type            String   @default("credit_card")
+  cardNumber      String   @db.VarChar(16)
+  cardCv          String   @db.VarChar(3)
+  expirationDate  DateTime 
+  cardholderName  String   @db.VarChar(100)
+  user            User     @relation(fields: [userId], references: [id])
+  userId          Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

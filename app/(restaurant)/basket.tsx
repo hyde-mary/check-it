@@ -46,11 +46,6 @@ const Basket = () => {
 
   const handleCheckout = async () => {
     console.log(foods);
-    setIsCheckingOut(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    clearBasket();
-    setOrderCompleted(true);
-    setIsCheckingOut(false);
   };
 
   if (orderCompleted) {

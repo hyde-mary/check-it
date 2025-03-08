@@ -40,6 +40,10 @@ const Profile = () => {
 
   const [loading, setLoading] = useState<boolean>(false);
 
+  const [cardNumber, setCardNumber] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [cvc, setCvc] = useState("");
+
   const fetchUserInfo = async () => {
     const userInfo = await getUserInfo();
     if (userInfo) {
@@ -89,6 +93,9 @@ const Profile = () => {
           weight: userData.weight,
           activityLevel: userData.activityLevel,
           goals: userData.goals,
+          cardNumber,
+          expiryDate,
+          cvc,
         }),
       });
 
@@ -220,6 +227,48 @@ const Profile = () => {
                 <Text style={styles.optionText}>{goal}</Text>
               </TouchableOpacity>
             ))}
+          </View>
+
+          <Text style={styles.sectionTitle}>Payment Method</Text>
+
+          <View style={styles.inputContainer}>
+            <Ionicons name="card-outline" size={20} color="#ff6666" />
+            <TextInput
+              style={styles.input}
+              placeholder="Card Number"
+              placeholderTextColor="#6B7280"
+              value={cardNumber}
+              onChangeText={setCardNumber}
+              keyboardType="numeric"
+              maxLength={15}
+            />
+          </View>
+
+          <View style={styles.metricRow}>
+            <View style={[styles.inputContainer, styles.measurementInput]}>
+              <Ionicons name="calendar-outline" size={20} color="#ff6666" />
+              <TextInput
+                style={styles.input}
+                placeholder="MM/YY"
+                placeholderTextColor="#6B7280"
+                value={expiryDate}
+                onChangeText={setExpiryDate}
+                maxLength={5}
+              />
+            </View>
+
+            <View style={[styles.inputContainer, styles.measurementInput]}>
+              <Ionicons name="lock-closed-outline" size={20} color="#ff6666" />
+              <TextInput
+                style={styles.input}
+                placeholder="CVC"
+                placeholderTextColor="#6B7280"
+                value={cvc}
+                onChangeText={setCvc}
+                keyboardType="numeric"
+                maxLength={3}
+              />
+            </View>
           </View>
 
           <TouchableOpacity
