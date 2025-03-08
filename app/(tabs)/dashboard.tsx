@@ -14,6 +14,7 @@ import OrdersView from "@/components/views/orders-view";
 import AddressesView from "@/components/views/addresses-view";
 import { getUserInfo } from "@/utils/sessionManager";
 import { User } from "@prisma/client";
+import { DotsLoader } from "@/components/Loading";
 
 export default function Dashboard() {
   const [selected, setSelected] = useState<
@@ -58,7 +59,7 @@ export default function Dashboard() {
     setUserData(userInfo);
   };
 
-  if (!userData) return null;
+  if (!userData) return <DotsLoader />;
 
   return (
     <LinearGradient colors={["#ffe6e6", "#ff9999"]} style={styles.container}>

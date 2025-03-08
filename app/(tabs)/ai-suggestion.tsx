@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { getUserInfo } from "@/utils/sessionManager";
 import { User } from "@prisma/client";
+import { DotsLoader } from "@/components/Loading";
 
 export default function AiSuggestion() {
   const [userCalories, setUserCalories] = useState<{
@@ -23,7 +24,7 @@ export default function AiSuggestion() {
 
   const [userData, setUserData] = useState<Omit<User, "password"> | null>(null);
 
-  const [suggestion, setSuggestion] = useState<string>("");
+  const [suggestion, setSuggestion] = useState<any>("");
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
@@ -77,6 +78,7 @@ export default function AiSuggestion() {
 
       const mealSuggestion = await response.json();
       console.log(mealSuggestion);
+      setSuggestion(mealSuggestion);
     } catch (error) {
       console.error(
         "Sorry, the server is busy. Please try again later.",
@@ -87,7 +89,7 @@ export default function AiSuggestion() {
     }
   };
 
-  if (!userData || !userCalories) return null;
+  if (!userData || !userCalories) return <DotsLoader />;
 
   return (
     <LinearGradient colors={["#F7F9FC", "#EFF2F7"]} style={styles.container}>
@@ -167,16 +169,14 @@ export default function AiSuggestion() {
               <Text style={styles.suggestionTitle}>
                 Your Personalized Meal Plan
               </Text>
-              <TouchableOpacity
-                onPress={() => console.log("Fetch Suggestions")}
-              >
+              <TouchableOpacity onPress={() => fetchMealSuggestion()}>
                 <Ionicons name="refresh" size={20} color="#B03A2E" />
               </TouchableOpacity>
             </View>
 
             {/** Ensure suggestion is parsed before mapping */}
-            {typeof suggestion === "string" ? (
-              JSON.parse(suggestion).suggestions.map(
+            {suggestion && suggestion.suggestions ? (
+              suggestion.suggestions.map(
                 (
                   meal: { food_name: string; reason: string },
                   index: number
