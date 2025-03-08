@@ -76,7 +76,7 @@ const Profile = () => {
     try {
       setLoading(true);
       const response = await fetch("http://10.0.2.2:3000/user/update", {
-        method: "POST",
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },

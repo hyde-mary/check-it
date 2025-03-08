@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import React, { useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { Link, useNavigation } from "expo-router";
+import { Link, router, useNavigation } from "expo-router";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/Colors";
@@ -44,25 +44,28 @@ const CustomHeader = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
-  const openModal = () => {
-    bottomSheetRef.current?.present();
+  const openLocationSearch = () => {
+    router.push("/location-search");
   };
 
   return (
     <SafeAreaView style={[styles.safeArea, { paddingTop: insets.top }]}>
       <BottomSheet ref={bottomSheetRef} />
       <View style={styles.container}>
-        <TouchableOpacity onPress={openModal}>
+        <TouchableOpacity onPress={openLocationSearch}>
           <Image
             style={styles.bike}
             source={require("@/assets/images/bike.png")}
           />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.titleContainer} onPress={openModal}>
+        <TouchableOpacity
+          style={styles.titleContainer}
+          onPress={openLocationSearch}
+        >
           <Text style={styles.title}>Delivery · Now</Text>
           <View style={styles.locationName}>
-            <Text style={styles.subtitle}>Metro Manila</Text>
+            <Text style={styles.subtitle}>Makati</Text>
             <Ionicons name="chevron-down" size={20} color={Colors.primary} />
           </View>
         </TouchableOpacity>
