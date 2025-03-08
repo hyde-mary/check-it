@@ -43,9 +43,11 @@ const Details = () => {
   const { items, total } = useBasketStore();
 
   useEffect(() => {
+    setRestaurantData(null);
+    setFoodData(null);
     fetchRestaurant();
     fetchRestaurantFood();
-  }, []);
+  }, [restaurantId]);
 
   const fetchRestaurant = async () => {
     try {
@@ -176,7 +178,7 @@ const Details = () => {
                 href={{
                   pathname: "/(modal)/dish",
                   params: {
-                    foodId: item.id,
+                    id: item.id,
                     name: item.name,
                     description: item.description,
                     img: item.img,

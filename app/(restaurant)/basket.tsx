@@ -4,175 +4,363 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import React, { useState } from "react";
 import Colors from "@/constants/Colors";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import useBasketStore from "@/store/useBasketStore";
 import SwipeableRow from "@/components/SwipeableRow";
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "react-native";
+import getImageSrc from "@/utils/getImageSrc";
 
 const Basket = () => {
-  const { foods, clearCart, reduceFood, items, total } = useBasketStore();
-  const [order, setOrder] = useState(false);
+  const {
+    foods,
+    increaseFood,
+    reduceFood,
+    clearFood,
+    clearBasket,
+    items,
+    total,
+  } = useBasketStore();
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [orderCompleted, setOrderCompleted] = useState(false);
 
   const FEES = {
     service: 2.99,
     delivery: 5.99,
   };
 
-  const startCheckout = () => {
-    setOrder(true);
-    clearCart();
+  const formatCurrency = (value: number) =>
+    value.toLocaleString("en-US", { style: "currency", currency: "PHP" });
+
+  const calculateTotal = () => {
+    const subtotal = isNaN(total) ? 0 : total;
+    return subtotal + FEES.service + FEES.delivery;
   };
 
+  const handleCheckout = async () => {
+    console.log(foods);
+    setIsCheckingOut(true);
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    clearBasket();
+    setOrderCompleted(true);
+    setIsCheckingOut(false);
+  };
+
+  if (orderCompleted) {
+    return (
+      <View style={styles.centeredContainer}>
+        <Ionicons name="checkmark-circle" size={80} color={Colors.primary} />
+        <Text style={styles.successTitle}>Order Confirmed!</Text>
+        <Text style={styles.successText}>
+          Your food is being prepared and will arrive soon
+        </Text>
+        <Link href="/" asChild>
+          <TouchableOpacity style={styles.button}>
+            <Text style={styles.buttonText}>Start New Order</Text>
+          </TouchableOpacity>
+        </Link>
+      </View>
+    );
+  }
+
   return (
-    <>
-      {/* {order && <ConfettiCannon count={200} origin={{ x: -10, y: 0 }} fallSpeed={2500} fadeOut={true} autoStart={true} />} */}
-      {order && (
-        <View style={{ marginTop: "50%", padding: 20, alignItems: "center" }}>
-          <Text
-            style={{ fontSize: 24, fontWeight: "bold", textAlign: "center" }}
+    <SafeAreaView style={styles.container} edges={["bottom"]}>
+      {items === 0 ? (
+        <View style={styles.centeredContainer}>
+          <Text style={styles.emptyText}>Your basket is empty</Text>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => {
+              router.back();
+            }}
           >
-            Thank you for your order!
-          </Text>
-          <Link href={"/"} asChild>
-            <TouchableOpacity style={styles.orderBtn}>
-              <Text style={styles.footerText}>New order</Text>
-            </TouchableOpacity>
-          </Link>
+            <Text style={styles.buttonText}>Browse Restaurant</Text>
+          </TouchableOpacity>
         </View>
-      )}
-      {!order && (
-        <>
+      ) : (
+        <KeyboardAvoidingView
+          style={styles.flexContainer}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
           <FlatList
             data={foods}
-            ListHeaderComponent={<Text style={styles.section}>Items</Text>}
-            ItemSeparatorComponent={() => (
-              <View style={{ height: 1, backgroundColor: Colors.grey }} />
-            )}
+            keyExtractor={(item) => `${item.id}-${item.name}`}
+            contentContainerStyle={styles.listContent}
+            ListHeaderComponent={
+              <Text style={styles.sectionHeader}>Your Items</Text>
+            }
+            ItemSeparatorComponent={() => <View style={styles.divider} />}
             renderItem={({ item }) => (
-              <SwipeableRow onDelete={() => reduceFood(item)}>
-                <View style={styles.row}>
-                  <Text style={{ color: Colors.primary, fontSize: 18 }}>
-                    {item.quantity}x
-                  </Text>
-                  <Text style={{ flex: 1, fontSize: 18 }}>{item.name}</Text>
-                  <Text style={{ fontSize: 18 }}>
-                    ${item.price * item.quantity}
-                  </Text>
+              <SwipeableRow onDelete={() => clearFood(item)}>
+                <View style={styles.itemRow}>
+                  <Image
+                    source={getImageSrc(item.img)}
+                    style={styles.itemImage}
+                  />
+                  <View style={styles.quantityContainer}>
+                    <TouchableOpacity
+                      style={styles.quantityButton}
+                      onPress={() => reduceFood(item)}
+                    >
+                      <Text style={styles.quantityText}>-</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.quantity}>{item.quantity}</Text>
+                    <TouchableOpacity
+                      style={styles.quantityButton}
+                      onPress={() => increaseFood(item)}
+                    >
+                      <Text style={styles.quantityText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.itemInfo}>
+                    <Text style={styles.itemName}>{item.name}</Text>
+                    <Text style={styles.itemPrice}>
+                      {formatCurrency(item.price * item.quantity)}
+                    </Text>
+                  </View>
                 </View>
               </SwipeableRow>
             )}
             ListFooterComponent={
-              <View>
-                <View
-                  style={{ height: 1, backgroundColor: Colors.grey }}
-                ></View>
+              <View style={styles.summaryContainer}>
+                <FeeRow label="Subtotal" value={total} />
+                <FeeRow label="Service Fee" value={FEES.service} />
+                <FeeRow label="Delivery Fee" value={FEES.delivery} />
                 <View style={styles.totalRow}>
-                  <Text style={styles.total}>Subtotal</Text>
-                  <Text style={{ fontSize: 18 }}>${total}</Text>
-                </View>
-
-                <View style={styles.totalRow}>
-                  <Text style={styles.total}>Service fee</Text>
-                  <Text style={{ fontSize: 18 }}>${FEES.service}</Text>
-                </View>
-
-                <View style={styles.totalRow}>
-                  <Text style={styles.total}>Delivery fee</Text>
-                  <Text style={{ fontSize: 18 }}>${FEES.delivery}</Text>
-                </View>
-
-                <View style={styles.totalRow}>
-                  <Text style={styles.total}>Order Total</Text>
-                  <Text style={{ fontSize: 18, fontWeight: "bold" }}>
-                    ${(total + FEES.service + FEES.delivery).toFixed(2)}
+                  <Text style={styles.totalLabel}>Order Total</Text>
+                  <Text style={styles.totalValue}>
+                    {formatCurrency(calculateTotal())}
                   </Text>
                 </View>
               </View>
             }
           />
-
-          <View style={styles.footer}>
-            <SafeAreaView
-              edges={["bottom"]}
-              style={{ backgroundColor: "#fff" }}
+          <View style={styles.fixedFooter}>
+            <TouchableOpacity
+              style={[styles.button, isCheckingOut && styles.disabledButton]}
+              onPress={handleCheckout}
+              disabled={isCheckingOut}
             >
-              <TouchableOpacity
-                style={styles.fullButton}
-                onPress={startCheckout}
-              >
-                <Text style={styles.footerText}>Order now</Text>
-              </TouchableOpacity>
-            </SafeAreaView>
+              {isCheckingOut ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>
+                  Place Order • {formatCurrency(calculateTotal())}
+                </Text>
+              )}
+            </TouchableOpacity>
           </View>
-        </>
+        </KeyboardAvoidingView>
       )}
-    </>
+    </SafeAreaView>
   );
 };
 
+const FeeRow = ({ label, value }: { label: string; value: number }) => (
+  <View style={styles.feeRow}>
+    <Text style={styles.feeLabel}>{label}</Text>
+    <Text style={styles.feeValue}>
+      {value.toLocaleString("en-US", { style: "currency", currency: "PHP" })}
+    </Text>
+  </View>
+);
+
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    backgroundColor: "#fff",
-    padding: 10,
-    gap: 20,
-    alignItems: "center",
+  container: {
+    flex: 1,
+    backgroundColor: Colors.lightGrey,
   },
-  section: {
-    fontSize: 20,
+  flexContainer: {
+    flex: 1,
+  },
+  listContent: {
+    flexGrow: 1,
+    paddingBottom: 100,
+  },
+  footer: {
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    padding: 16,
+    borderTopWidth: 1,
+    marginBottom: 50,
+    paddingBottom: 50,
+    borderTopColor: Colors.lightGrey,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  fixedFooter: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    padding: 16,
+    borderTopWidth: 1,
+    paddingBottom: 52,
+    borderTopColor: Colors.lightGrey,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  centeredContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  sectionHeader: {
+    fontSize: 24,
     fontWeight: "bold",
-    margin: 16,
+    padding: 16,
+    color: Colors.primary,
+    backgroundColor: "#fff",
+  },
+  itemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 16,
+    gap: 16,
+  },
+  quantity: {
+    color: Colors.primary,
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  itemInfo: {
+    flex: 1,
+  },
+  itemName: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  itemOption: {
+    fontSize: 14,
+    color: Colors.medium,
+    marginTop: 4,
+  },
+  itemPrice: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.lightGrey,
+    marginHorizontal: 16,
+  },
+  summaryContainer: {
+    backgroundColor: "#fff",
+    marginTop: 16,
+  },
+  feeRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.lightGrey,
+  },
+  feeLabel: {
+    fontSize: 16,
+    color: Colors.medium,
+  },
+  feeValue: {
+    fontSize: 16,
+    fontWeight: "500",
   },
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    padding: 10,
-    backgroundColor: "#fff",
+    padding: 16,
+    backgroundColor: Colors.lightGrey,
   },
-  total: {
+  totalLabel: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  totalValue: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: Colors.primary,
+  },
+  button: {
+    backgroundColor: Colors.primary,
+    borderRadius: 8,
+    padding: 16,
+    alignItems: "center",
+  },
+  disabledButton: {
+    backgroundColor: Colors.medium,
+    opacity: 0.8,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  emptyText: {
     fontSize: 18,
     color: Colors.medium,
+    marginBottom: 20,
   },
-  footer: {
-    position: "absolute",
-    backgroundColor: "#fff",
-    bottom: 0,
-    left: 0,
-    width: "100%",
-    padding: 10,
-    elevation: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    paddingTop: 20,
-  },
-  fullButton: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    flex: 1,
-    height: 50,
-  },
-  footerText: {
-    color: "#fff",
+  successTitle: {
+    fontSize: 24,
     fontWeight: "bold",
-    fontSize: 16,
+    marginVertical: 16,
   },
-  orderBtn: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: "center",
-    width: 250,
+  successText: {
+    fontSize: 16,
+    color: Colors.medium,
+    textAlign: "center",
+    marginBottom: 24,
+    paddingHorizontal: 40,
+  },
+  itemImage: {
+    width: 50,
     height: 50,
-    justifyContent: "center",
-    marginTop: 20,
+    borderRadius: 8,
+  },
+
+  quantityContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+
+  quantityButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 5,
+  },
+  quantityText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  fixedFooter: {
+    backgroundColor: "#fff",
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: Colors.lightGrey,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
 });
 

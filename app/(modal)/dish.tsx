@@ -10,6 +10,7 @@ const Dish = () => {
   const { id, name, price, description, img, calories, protein, carbs, fat } =
     useLocalSearchParams();
   const router = useRouter();
+
   const { addFood } = useBasketStore();
 
   const addToCart = () => {
