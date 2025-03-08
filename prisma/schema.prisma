@@ -26,6 +26,19 @@ enum Goals {
   GainWeight
 }
 
+enum OrderStatus {
+  Pending
+  Preparing
+  OutForDelivery
+  Delivered
+  Canceled
+}
+
+enum PaymentType {
+  Cash
+  Card
+}
+
 model User {
   id             Int                @id @default(autoincrement())
   firstName      String             @db.VarChar(80)
@@ -94,13 +107,14 @@ model Food {
 }
 
 model PaymentMethod {
-  paymentId      Int      @id @default(autoincrement())
-  cardNumber     String   @db.VarChar(16)
-  cardCv         String   @db.VarChar(3)
-  expirationDate DateTime @db.Date
-  transactionId  String   @unique
-  cardholderName String   @db.VarChar(100)
-  user           User     @relation(fields: [userId], references: [id])
+  paymentId      Int          @id @default(autoincrement())
+  type           PaymentType  @default(Cash)
+  cardNumber     String?      @db.VarChar(16)
+  cardCv         String?      @db.VarChar(3)
+  expirationDate DateTime?    @db.Date        
+  transactionId  String?      @unique
+  cardholderName String?      @db.VarChar(100)
+  user           User         @relation(fields: [userId], references: [id])
   userId         Int
   orders         Order[]
 }
@@ -124,6 +138,7 @@ model Order {
   paymentMethod PaymentMethod @relation(fields: [paymentId], references: [paymentId])
   paymentId     Int
   orderItems    OrderItem[]
+  status        OrderStatus   @default(Pending)
 }
 
 model PaymentOption {

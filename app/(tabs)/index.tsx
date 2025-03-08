@@ -9,6 +9,7 @@ import Colors from "@/constants/Colors";
 import Categories from "@/components/index/Categories";
 import RestaurantsPicks from "@/components/index/RestaurantsPicks";
 import RestaurantsNear from "@/components/index/RestaurantsNear";
+// import { getUserInfo } from "@/utils/sessionManager";
 
 export default function Page() {
   const [restaurants, setRestaurants] = useState<Restaurant[] | null>();
@@ -20,6 +21,8 @@ export default function Page() {
   }, []);
 
   const fetchAllCategory = async () => {
+    // const userInfo = await getUserInfo();
+    // console.log(userInfo);
     try {
       const response = await fetch("http://10.0.2.2:3000/category/");
 

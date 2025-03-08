@@ -55,6 +55,7 @@ const register = async (req, res) => {
     const {
       firstName,
       lastName,
+      middleName,
       email,
       password,
       birthday,
@@ -81,6 +82,7 @@ const register = async (req, res) => {
       data: {
         firstName,
         lastName,
+        middleName,
         email,
         password: hashedPassword,
         birthday: userBirthday,
@@ -112,15 +114,27 @@ const register = async (req, res) => {
       },
     });
 
+    // 🔐 Generate JWT token
+    const token = jwt.sign({ userId: newUser.id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+
     res.status(201).json({
       message: "User registered successfully",
+      token, // Include token in response
       user: {
         id: newUser.id,
         firstName: newUser.firstName,
+        middleName: newUser.middleName,
         lastName: newUser.lastName,
         email: newUser.email,
         birthday: newUser.birthday,
+        height: newUser.height,
+        weight: newUser.weight,
         bmi,
+        gender: newUser.gender,
+        activityLevel: newUser.activityLevel,
+        goals: newUser.goals,
       },
       caloricIntake: {
         caloricIntake,

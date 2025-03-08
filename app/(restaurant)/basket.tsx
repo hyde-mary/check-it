@@ -69,13 +69,6 @@ const Basket = () => {
         quantity: item.quantity,
       }));
 
-      // console.log(
-      //   JSON.stringify({
-      //     userId: userInfo.id,
-      //     foodItems,
-      //   })
-      // );
-
       const response = await fetch("http://10.0.2.2:3000/order/orderFood", {
         method: "POST",
         headers: {
@@ -84,12 +77,16 @@ const Basket = () => {
         body: JSON.stringify({
           userId: userInfo.id,
           foodItems,
+          selectedPayment,
         }),
       });
 
       if (!response.ok) {
         throw new Error("Network Error");
       }
+
+      clearBasket();
+      router.replace("/");
     } catch (error) {
       console.error("Error during checkout:", error);
       setIsCheckingOut(false);
@@ -433,6 +430,7 @@ const styles = StyleSheet.create({
   paymentSection: {
     backgroundColor: "#fff",
     padding: 16,
+    marginBottom: 40,
     marginTop: 8,
   },
   paymentTitle: {

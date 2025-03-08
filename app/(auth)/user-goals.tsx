@@ -11,6 +11,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useRegisterStore } from "@/store/useRegisterStore";
+import { saveToken, saveUserInfo } from "@/utils/sessionManager";
 
 export default function UserGoals() {
   const [selectedGoal, setSelectedGoal] = useState("");
@@ -68,8 +69,13 @@ export default function UserGoals() {
 
       if (response.ok) {
         Alert.alert("Success", "User registered successfully!");
+        await saveToken(data.token);
+
+        const { password, ...userWithoutPassword } = data.user;
+        await saveUserInfo(userWithoutPassword);
+
         resetUserData();
-        router.push("/");
+        router.replace("/");
       } else {
         Alert.alert("Error", data.error || "Something went wrong.");
       }
