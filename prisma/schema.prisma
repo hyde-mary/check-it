@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["reactNative"]
 }
 
@@ -27,45 +27,45 @@ enum Goals {
 }
 
 model User {
-  id             Int                 @id @default(autoincrement())
-  firstName      String              @db.VarChar(80)
-  middleName     String?             @db.VarChar(50)
-  lastName       String              @db.VarChar(50)
-  birthday       DateTime            @db.Date
+  id             Int                @id @default(autoincrement())
+  firstName      String             @db.VarChar(80)
+  middleName     String?            @db.VarChar(50)
+  lastName       String             @db.VarChar(50)
+  birthday       DateTime           @db.Date
   height         Float
   weight         Float
-  bmi            Float               @default(dbgenerated())
+  bmi            Float              @default(dbgenerated())
   gender         Gender
   activityLevel  ActivityLevel
   goals          Goals
-  email          String              @unique @db.VarChar(100)
-  password       String              @db.VarChar(255)
+  email          String             @unique @db.VarChar(100)
+  password       String             @db.VarChar(255)
   caloricIntake  UserCaloricIntake?
   paymentMethods PaymentMethod[]
   orders         Order[]
 }
 
 model UserCaloricIntake {
-  userId         Int    @id
-  caloricIntake  Int
-  protein        Float
-  carbs          Float
-  fat            Float
-  user           User   @relation(fields: [userId], references: [id])
+  userId        Int   @id
+  caloricIntake Int
+  protein       Float
+  carbs         Float
+  fat           Float
+  user          User  @relation(fields: [userId], references: [id])
 }
 
 model Restaurant {
-  id            Int     @id @default(autoincrement())
-  name          String  @unique @db.VarChar(100)
-  location      String  @db.VarChar(255)
-  rating        Float // 4.5
-  ratingsCount  Int // 300
-  img           String? @db.VarChar(255)
-  distance      Float // in km
-  deliveryTime  Int // in minutes
-  about         String? @db.Text
-  foods         Food[]
-  orders        Order[]
+  id           Int     @id @default(autoincrement())
+  name         String  @unique @db.VarChar(100)
+  location     String  @db.VarChar(255)
+  rating       Float // 4.5
+  ratingsCount Int // 300
+  img          String? @db.VarChar(255)
+  distance     Float // in km
+  deliveryTime Int // in minutes
+  about        String? @db.Text
+  foods        Food[]
+  orders       Order[]
 }
 
 model Category {
@@ -76,40 +76,51 @@ model Category {
 }
 
 model Food {
-  id           Int       @id @default(autoincrement())
-  name         String    @db.VarChar(100)
-  price        Decimal   @db.Decimal(10, 2)
-  description  String    @db.Text
-  img          String?   @db.VarChar(255)
+  id           Int         @id @default(autoincrement())
+  name         String      @db.VarChar(100)
+  price        Decimal     @db.Decimal(10, 2)
+  description  String      @db.Text
+  img          String?     @db.VarChar(255)
   calories     Int
   protein      Float
   carbs        Float
   fat          Float
-  category     Category  @relation(fields: [categoryId], references: [id])
+  category     Category    @relation(fields: [categoryId], references: [id])
   categoryId   Int
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
   restaurantId Int
+  orderItems   OrderItem[]
 }
 
 model PaymentMethod {
-  paymentId       Int      @id @default(autoincrement()) @map("payment_id")
-  cardNumber      String   @db.VarChar(16)
-  cardCv          String   @db.VarChar(3)
-  expirationDate  DateTime @db.Date
-  transactionId   String   @unique
-  cardholderName  String   @db.VarChar(100)
-  user            User     @relation(fields: [userId], references: [id])
-  userId          Int
-  orders          Order[]
+  paymentId      Int      @id @default(autoincrement()) @map("payment_id")
+  cardNumber     String   @db.VarChar(16)
+  cardCv         String   @db.VarChar(3)
+  expirationDate DateTime @db.Date
+  transactionId  String   @unique
+  cardholderName String   @db.VarChar(100)
+  user           User     @relation(fields: [userId], references: [id])
+  userId         Int
+  orders         Order[]
+}
+
+model OrderItem {
+  id       Int   @id @default(autoincrement())
+  order    Order @relation(fields: [orderId], references: [orderId])
+  orderId  Int
+  food     Food  @relation(fields: [foodId], references: [id])
+  foodId   Int
+  quantity Int
 }
 
 model Order {
-  orderId      Int           @id @default(autoincrement()) @map("order_id")
-  orderTime    DateTime      @db.Timestamp(6)
-  user         User          @relation(fields: [userId], references: [id])
-  userId       Int
-  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id])
-  restaurantId Int
+  orderId       Int           @id @default(autoincrement()) @map("order_id")
+  orderTime     DateTime      @default(now()) @db.Timestamp(6)
+  user          User          @relation(fields: [userId], references: [id])
+  userId        Int
+  restaurant    Restaurant    @relation(fields: [restaurantId], references: [id])
+  restaurantId  Int
   paymentMethod PaymentMethod @relation(fields: [paymentId], references: [paymentId])
-  paymentId    Int
+  paymentId     Int
+  orderItems    OrderItem[]
 }
