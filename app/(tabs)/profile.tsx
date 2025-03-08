@@ -16,28 +16,29 @@ import {
   removeUserInfo,
 } from "@/utils/sessionManager";
 import { useRouter } from "expo-router";
+import { User } from "@prisma/client";
+import { DotsLoader } from "@/components/Loading";
 
 const Profile = () => {
   const router = useRouter();
 
-  const [userData, setUserData] = useState({
-    id: 0,
-    firstName: "",
-    middleName: null,
-    lastName: "",
-    email: "",
-    gender: "",
-    birthday: "",
-    bmi: 0,
-    height: 0,
-    weight: 0,
-    activityLevel: "",
-    goals: "",
-  });
+  const [userData, setUserData] = useState<Pick<
+    User,
+    | "id"
+    | "firstName"
+    | "lastName"
+    | "email"
+    | "height"
+    | "weight"
+    | "activityLevel"
+    | "goals"
+  > | null>(null);
 
   useEffect(() => {
     fetchUserInfo();
   }, []);
+
+  const [loading, setLoading] = useState<boolean>(false);
 
   const fetchUserInfo = async () => {
     const userInfo = await getUserInfo();
@@ -66,12 +67,43 @@ const Profile = () => {
       value = goalsMapping[value] || value;
     }
 
-    setUserData((prev) => ({ ...prev, [key]: value }));
+    setUserData((prev) => (prev ? { ...prev, [key]: value } : null));
   };
 
   const handleSave = async () => {
-    await saveUserInfo(userData);
-    alert("Profile updated!");
+    if (!userData) return null;
+
+    try {
+      setLoading(true);
+      const response = await fetch("http://10.0.2.2:3000/user/update", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: userData.id,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          email: userData.email,
+          height: userData.height,
+          weight: userData.weight,
+          activityLevel: userData.activityLevel,
+          goals: userData.goals,
+        }),
+      });
+
+      const data = await response.json();
+      await saveUserInfo(userData);
+      if (!response.ok) {
+        console.error("Update failed:", data.error);
+      } else {
+        alert("Profile updated!");
+      }
+    } catch (error) {
+      console.error("Error updating profile, please try again later.", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = async () => {
@@ -79,6 +111,8 @@ const Profile = () => {
     await removeUserInfo();
     router.replace("/login");
   };
+
+  if (!userData) return <DotsLoader />;
 
   return (
     <LinearGradient colors={["#ffe6e6", "#ff9999"]} style={styles.container}>
@@ -188,9 +222,15 @@ const Profile = () => {
             ))}
           </View>
 
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleSave}
+            disabled={loading}
+          >
             <Ionicons name="checkmark-circle" size={20} color="white" />
-            <Text style={styles.saveButtonText}>Save Changes</Text>
+            <Text style={styles.saveButtonText}>
+              {loading ? `Updating...` : `Save Changes`}
+            </Text>
           </TouchableOpacity>
         </View>
 

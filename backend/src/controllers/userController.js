@@ -160,4 +160,84 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { getUser, register, login };
+const update = async (req, res) => {
+  try {
+    let {
+      id,
+      firstName,
+      lastName,
+      email,
+      height,
+      weight,
+      activityLevel,
+      goals,
+    } = req.body;
+
+    id = Number(id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id } });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found!" });
+    }
+
+    const emailExists = await prisma.user.findFirst({
+      where: { email, NOT: { id } },
+    });
+
+    if (emailExists) {
+      return res.status(400).json({ error: "Email is already in use." });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: {
+        firstName,
+        lastName,
+        email,
+        height,
+        weight,
+        activityLevel,
+        goals,
+      },
+    });
+
+    const { caloricIntake, protein, carbs, fat } = calculateCaloricIntake({
+      birthday: updatedUser.birthday,
+      gender: updatedUser.gender,
+      weight: updatedUser.weight,
+      height: updatedUser.height,
+      activityLevel: updatedUser.activityLevel,
+      goals: updatedUser.goals,
+    });
+
+    await prisma.userCaloricIntake.upsert({
+      where: { userId: id },
+      update: { caloricIntake, protein, carbs, fat },
+      create: { userId: id, caloricIntake, protein, carbs, fat },
+    });
+
+    res.json({
+      message: "Update successful",
+      updatedUser: {
+        id: updatedUser.id,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        email: updatedUser.email,
+        height: updatedUser.height,
+        weight: updatedUser.weight,
+        activityLevel: updatedUser.activityLevel,
+        goals: updatedUser.goals,
+      },
+      caloricIntake: { caloricIntake, protein, carbs, fat },
+    });
+  } catch (error) {
+    console.error("Update error: ", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+module.exports = { getUser, register, login, update };
