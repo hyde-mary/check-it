@@ -1,22 +1,13 @@
-import React, { Component } from "react";
+import React, { Component, createRef } from "react";
 import { Animated, Dimensions, View, StyleSheet } from "react-native";
-import { ViewPropTypes } from "deprecated-react-native-prop-types";
-
-import { bool, func, number, string } from "prop-types";
+import PropTypes from "prop-types";
 
 const window = Dimensions.get("window");
 
-const SCROLLVIEW_REF = "ScrollView";
-
 const pivotPoint = (a, b) => a - b;
-
 const renderEmpty = () => <View />;
-
 const noRender = () => <View style={{ display: "none" }} />;
 
-// Override `toJSON` of interpolated value because of
-// an error when serializing style on view inside inspector.
-// See: https://github.com/jaysoo/react-native-parallax-scroll-view/issues/23
 const interpolate = (value, opts) => {
   const x = value.interpolate(opts);
   x.toJSON = () => x.__getValue();
@@ -25,25 +16,34 @@ const interpolate = (value, opts) => {
 
 // Properties accepted by `ParallaxScrollView`.
 const IPropTypes = {
-  backgroundColor: string,
-  backgroundScrollSpeed: number,
-  fadeOutForeground: bool,
-  fadeOutBackground: bool,
-  contentBackgroundColor: string,
-  onChangeHeaderVisibility: func,
-  parallaxHeaderHeight: number.isRequired,
-  renderBackground: func,
-  renderContentBackground: func,
-  renderFixedHeader: func,
-  renderForeground: func,
-  renderScrollComponent: func,
-  renderStickyHeader: func,
-  stickyHeaderHeight: number,
-  contentContainerStyle: ViewPropTypes.style,
-  outputScaleValue: number,
+  backgroundColor: PropTypes.string,
+  backgroundScrollSpeed: PropTypes.number,
+  fadeOutForeground: PropTypes.bool,
+  fadeOutBackground: PropTypes.bool,
+  contentBackgroundColor: PropTypes.string,
+  onChangeHeaderVisibility: PropTypes.func,
+  parallaxHeaderHeight: PropTypes.number.isRequired,
+  renderBackground: PropTypes.func,
+  renderContentBackground: PropTypes.func,
+  renderFixedHeader: PropTypes.func,
+  renderForeground: PropTypes.func,
+  renderScrollComponent: PropTypes.func,
+  renderStickyHeader: PropTypes.func,
+  stickyHeaderHeight: PropTypes.number,
+  contentContainerStyle: PropTypes.oneOfType([
+    PropTypes.number,
+    PropTypes.object,
+    PropTypes.array,
+    PropTypes.any,
+  ]),
+  outputScaleValue: PropTypes.number,
 };
 
 class ParallaxScrollView extends Component {
+  scrollViewRef = createRef();
+  _footerComponent = { setNativeProps() {} };
+  _footerHeight = 0;
+
   constructor(props) {
     super(props);
     if (props.renderStickyHeader && !props.stickyHeaderHeight) {
@@ -62,8 +62,6 @@ class ParallaxScrollView extends Component {
       viewWidth: window.width,
     };
     this.scrollY = new Animated.Value(0);
-    this._footerComponent = { setNativeProps() {} }; // Initial stub
-    this._footerHeight = 0;
   }
 
   animatedEvent = Animated.event(
@@ -133,15 +131,16 @@ class ParallaxScrollView extends Component {
         {React.cloneElement(
           scrollElement,
           {
-            ref: SCROLLVIEW_REF,
+            ref: this.scrollViewRef,
             style: [styles.scrollView, scrollElement.props.style],
-            scrollEventThrottle: 1,
-            // Using Native Driver greatly optimizes performance
+            scrollEventThrottle: 16,
             onScroll: Animated.event(
               [{ nativeEvent: { contentOffset: { y: this.scrollY } } }],
-              { useNativeDriver: true, listener: this._onScroll.bind(this) }
+              {
+                useNativeDriver: true,
+                listener: this._onScroll.bind(this),
+              }
             ),
-            // onScroll: this._onScroll.bind(this)
           },
           foreground,
           bodyComponent,
@@ -156,19 +155,23 @@ class ParallaxScrollView extends Component {
    * Expose `ScrollView` API so this component is composable with any component that expects a `ScrollView`.
    */
   getScrollResponder() {
-    return this.refs[SCROLLVIEW_REF]._component.getScrollResponder();
+    return this.scrollViewRef.current?.getScrollResponder();
   }
+
   getScrollableNode() {
-    return this.getScrollResponder().getScrollableNode();
+    return this.scrollViewRef.current?.getScrollableNode();
   }
+
   getInnerViewNode() {
-    return this.getScrollResponder().getInnerViewNode();
+    return this.scrollViewRef.current?.getInnerViewNode();
   }
+
   scrollTo(...args) {
-    this.getScrollResponder().scrollTo(...args);
+    this.scrollViewRef.current?.scrollTo(...args);
   }
+
   setNativeProps(props) {
-    this.refs[SCROLLVIEW_REF].setNativeProps(props);
+    this.scrollViewRef.current?.setNativeProps(props);
   }
 
   /*
@@ -446,7 +449,7 @@ ParallaxScrollView.defaultProps = {
   renderScrollComponent: (props) => <Animated.ScrollView {...props} />,
   renderBackground: renderEmpty,
   renderContentBackground: noRender,
-  renderParallaxHeader: renderEmpty, // Deprecated (will be removed in 0.18.0)
+  renderParallaxHeader: renderEmpty,
   renderForeground: null,
   stickyHeaderHeight: 0,
   contentContainerStyle: null,

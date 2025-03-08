@@ -5,22 +5,13 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
-  LayoutChangeEvent,
   SectionList,
-  TouchableOpacityProps,
 } from "react-native";
-import React, {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Colors from "@/constants/Colors";
 import { Link, useLocalSearchParams, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, {
-  interpolate,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -47,7 +38,7 @@ const Details = () => {
   }));
 
   const scrollRef = useRef<ScrollView>(null);
-  const itemsRef = useRef<TouchableOpacityProps[]>([]);
+  const itemsRef = useRef<TouchableOpacity[]>([]);
 
   const { items, total } = useBasketStore();
 
@@ -114,13 +105,11 @@ const Details = () => {
     setActiveIndex(index);
 
     scrollRef.current?.scrollTo({
-      x: index * 100, // Adjust based on your category button width
+      x: index * 100,
       animated: true,
     });
 
-    // Scroll to section in SectionList
     const sectionScroll = groupedFoods[index].index;
-    // You'll need to implement scroll to section logic here
   };
 
   const onScroll = (event: any) => {
@@ -153,7 +142,7 @@ const Details = () => {
       <ParallaxScrollView
         scrollEvent={onScroll}
         backgroundColor={"#fff"}
-        style={{ flex: 1 }}
+        style={{ flex: 1, paddingBottom: 42 }}
         parallaxHeaderHeight={250}
         stickyHeaderHeight={100}
         renderBackground={() => (
@@ -172,8 +161,7 @@ const Details = () => {
         <View style={styles.detailsContainer}>
           <Text style={styles.restaurantName}>{restaurantData.name}</Text>
           <Text style={styles.restaurantDescription}>
-            Delivery Time: {restaurantData.deliveryTime}
-            {" minutes"}
+            Delivery Time: {restaurantData.deliveryTime} minutes
           </Text>
           <Text style={styles.restaurantDescription}>
             {restaurantData.about}
@@ -284,7 +272,7 @@ const Details = () => {
               <TouchableOpacity style={styles.fullButton}>
                 <Text style={styles.basket}>{items}</Text>
                 <Text style={styles.footerText}>View Basket</Text>
-                <Text style={styles.basketTotal}>${total}</Text>
+                <Text style={styles.basketTotal}>₱{total.toFixed(2)}</Text>
               </TouchableOpacity>
             </Link>
           </SafeAreaView>
@@ -333,30 +321,47 @@ const styles = StyleSheet.create({
     color: Colors.medium,
   },
   sectionHeader: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginTop: 40,
-    margin: 16,
+    fontSize: 20,
+    fontWeight: "700",
+    color: Colors.mediumDark,
+    marginTop: 32,
+    marginBottom: 16,
+    marginHorizontal: 16,
+    paddingVertical: 8,
+    paddingBottom: 20,
+    borderBottomWidth: 2,
+    borderBottomColor: Colors.primary,
   },
   item: {
     backgroundColor: "#fff",
     padding: 16,
     flexDirection: "row",
+    gap: 16,
+    borderRadius: 8,
+    marginHorizontal: 16,
+    marginVertical: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   dishImage: {
-    height: 100,
-    width: 100,
-    borderRadius: 4,
+    height: 120,
+    width: 120,
+    borderRadius: 8,
     resizeMode: "cover",
   },
   dish: {
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 17,
+    fontWeight: "600",
+    color: Colors.mediumDark,
   },
   dishText: {
     fontSize: 14,
     color: Colors.mediumDark,
-    paddingVertical: 4,
+    lineHeight: 20,
+    marginVertical: 6,
   },
   stickySegments: {
     position: "absolute",
@@ -414,49 +419,62 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     width: "100%",
-    padding: 10,
-    elevation: 10,
+    padding: 16,
+    elevation: 20,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: -10 },
+    shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
-    shadowRadius: 10,
-    paddingTop: 20,
+    shadowRadius: 8,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
   },
   fullButton: {
     backgroundColor: Colors.primary,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingHorizontal: 24,
+    borderRadius: 12,
     alignItems: "center",
     flexDirection: "row",
-    flex: 1,
     justifyContent: "space-between",
-    height: 50,
+    height: 56,
+    gap: 8,
   },
   footerText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
+    flex: 1,
+    marginLeft: 8,
   },
   basket: {
     color: "#fff",
     backgroundColor: "#19AA86",
     fontWeight: "bold",
-    padding: 8,
-    borderRadius: 2,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 100,
+    fontSize: 14,
+    minWidth: 28,
+    textAlign: "center",
   },
   basketTotal: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
+    marginRight: 4,
   },
   nutritionContainer: {
     flexDirection: "row",
-    gap: 10,
+    gap: 12,
     marginTop: 8,
+    flexWrap: "wrap",
   },
   nutritionText: {
-    fontSize: 12,
+    fontSize: 13,
     color: Colors.mediumDark,
+    backgroundColor: Colors.lightGrey,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 6,
   },
 });
 

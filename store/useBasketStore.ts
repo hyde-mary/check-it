@@ -1,57 +1,68 @@
 import { create } from "zustand";
 
-export interface Product {
+export interface Food {
   id: number;
   name: string;
   price: number;
-  info: string;
-  img: any;
+  description: string;
+  img: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
 }
 
 export interface BasketState {
-  products: Array<Product & { quantity: number }>;
-  addProduct: (product: Product) => void;
-  reduceProduct: (product: Product) => void;
+  foods: Array<Food & { quantity: number }>;
+  addFood: (food: Food) => void;
+  reduceFood: (food: Food) => void;
   clearCart: () => void;
   items: number;
   total: number;
 }
 
-const useBasketStore = create<BasketState>()((set) => ({
-  products: [],
+const useBasketStore = create<BasketState>((set) => ({
+  foods: [],
   items: 0,
   total: 0,
-  addProduct: (product) => {
-    set((state) => {
-      state.items += 1;
-      state.total += product.price;
-      const hasProduct = state.products.find((p) => p.id === product.id);
 
-      if (hasProduct) {
-        hasProduct.quantity += 1;
-        return { products: [...state.products] };
+  addFood: (food) => {
+    set((state) => {
+      const existingFood = state.foods.find((f) => f.id === food.id);
+
+      if (existingFood) {
+        return {
+          foods: state.foods.map((f) =>
+            f.id === food.id ? { ...f, quantity: f.quantity + 1 } : f
+          ),
+          items: state.items + 1,
+          total: state.total + food.price,
+        };
       } else {
-        return { products: [...state.products, { ...product, quantity: 1 }] };
+        return {
+          foods: [...state.foods, { ...food, quantity: 1 }],
+          items: state.items + 1,
+          total: state.total + food.price,
+        };
       }
     });
   },
-  reduceProduct: (product) => {
+
+  reduceFood: (food) => {
     set((state) => {
-      state.total -= product.price;
-      state.items -= 1;
+      const updatedFoods = state.foods
+        .map((f) => (f.id === food.id ? { ...f, quantity: f.quantity - 1 } : f))
+        .filter((f) => f.quantity > 0);
+
       return {
-        products: state.products
-          .map((p) => {
-            if (p.id === product.id) {
-              p.quantity -= 1;
-            }
-            return p;
-          })
-          .filter((p) => p.quantity > 0),
+        foods: updatedFoods,
+        items: state.items - 1,
+        total: state.total - food.price,
       };
     });
   },
-  clearCart: () => set({ products: [], items: 0, total: 0 }),
+
+  clearCart: () => set({ foods: [], items: 0, total: 0 }),
 }));
 
 export default useBasketStore;

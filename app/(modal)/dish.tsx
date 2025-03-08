@@ -4,28 +4,29 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import getImageSrc from "@/utils/getImageSrc";
 import useBasketStore from "@/store/useBasketStore";
+import Colors from "@/constants/Colors";
 
 const Dish = () => {
   const { id, name, price, description, img, calories, protein, carbs, fat } =
     useLocalSearchParams();
   const router = useRouter();
-  const { addProduct } = useBasketStore();
+  const { addFood } = useBasketStore();
 
-  // const addToCart = () => {
-  //   addProduct({
-  //     id,
-  //     name,
-  //     price: parseFloat(price),
-  //     description,
-  //     img,
-  //     calories,
-  //     protein,
-  //     carbs,
-  //     fat,
-  //   });
-  //   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-  //   router.back();
-  // };
+  const addToCart = () => {
+    addFood({
+      id: Number(id),
+      name: name as string,
+      price: parseFloat(price as string),
+      description: description as string,
+      img: img as string,
+      calories: Number(calories),
+      protein: Number(protein),
+      carbs: Number(carbs),
+      fat: Number(fat),
+    });
+
+    router.back();
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["bottom"]}>
@@ -53,7 +54,7 @@ const Dish = () => {
         <View style={styles.footer}>
           <TouchableOpacity
             style={styles.addButton}
-            onPress={() => {}}
+            onPress={() => addToCart()}
             activeOpacity={0.9}
           >
             <Ionicons name="cart" size={24} color="white" style={styles.icon} />
@@ -155,7 +156,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#0984e3",
+    backgroundColor: Colors.primary,
     padding: 18,
     borderRadius: 14,
     shadowColor: "#0984e3",
