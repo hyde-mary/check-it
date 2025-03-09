@@ -44,6 +44,11 @@ const Profile = () => {
   const [expiryDate, setExpiryDate] = useState("");
   const [cvc, setCvc] = useState("");
 
+  const [street, setStreet] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [zipCode, setZipCode] = useState("");
+
   const fetchUserInfo = async () => {
     const userInfo = await getUserInfo();
     if (userInfo) {
@@ -96,6 +101,10 @@ const Profile = () => {
           cardNumber,
           expiryDate,
           cvc,
+          street,
+          city,
+          state,
+          zipCode,
         }),
       });
 
@@ -229,6 +238,7 @@ const Profile = () => {
             ))}
           </View>
 
+          {/* Payment Method */}
           <Text style={styles.sectionTitle}>Payment Method</Text>
 
           <View style={styles.inputContainer}>
@@ -271,6 +281,7 @@ const Profile = () => {
             </View>
           </View>
 
+          {/* Address Information */}
           <Text style={styles.sectionTitle}>Address Information</Text>
 
           <View style={styles.inputContainer}>
@@ -279,8 +290,8 @@ const Profile = () => {
               style={styles.input}
               placeholder="Street Address"
               placeholderTextColor="#6B7280"
-              // value={userData.street || ""}
-              onChangeText={(text) => handleChange("street", text)}
+              value={street || ""}
+              onChangeText={(text) => setStreet(text)}
             />
           </View>
 
@@ -291,8 +302,8 @@ const Profile = () => {
                 style={styles.input}
                 placeholder="City"
                 placeholderTextColor="#6B7280"
-                // value={userData.city || ""}
-                onChangeText={(text) => handleChange("city", text)}
+                value={city || ""}
+                onChangeText={(text) => setCity(text)}
               />
             </View>
 
@@ -302,8 +313,8 @@ const Profile = () => {
                 style={styles.input}
                 placeholder="State"
                 placeholderTextColor="#6B7280"
-                // value={userData.state || ""}
-                onChangeText={(text) => handleChange("state", text)}
+                value={state || ""}
+                onChangeText={(text) => setState(text)}
               />
             </View>
           </View>
@@ -314,8 +325,8 @@ const Profile = () => {
               style={styles.input}
               placeholder="ZIP Code"
               placeholderTextColor="#6B7280"
-              // value={userData.zipCode || ""}
-              onChangeText={(text) => handleChange("zipCode", text)}
+              value={zipCode || ""}
+              onChangeText={(text) => setZipCode(text)}
               keyboardType="numeric"
               maxLength={5}
             />

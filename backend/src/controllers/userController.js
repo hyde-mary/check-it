@@ -114,14 +114,13 @@ const register = async (req, res) => {
       },
     });
 
-    // 🔐 Generate JWT token
     const token = jwt.sign({ userId: newUser.id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
 
     res.status(201).json({
       message: "User registered successfully",
-      token, // Include token in response
+      token,
       user: {
         id: newUser.id,
         firstName: newUser.firstName,
@@ -188,6 +187,10 @@ const update = async (req, res) => {
       cardNumber,
       expiryDate,
       cvc,
+      street,
+      city,
+      state,
+      zipCode,
     } = req.body;
 
     id = Number(id);
@@ -264,6 +267,24 @@ const update = async (req, res) => {
       }
     }
 
+    let address = null;
+    if (street && city && state && zipCode) {
+      const existingAddress = await prisma.address.findUnique({
+        where: { userId: id },
+      });
+
+      if (existingAddress) {
+        address = await prisma.address.update({
+          where: { userId: id },
+          data: { street, city, state, zipCode },
+        });
+      } else {
+        address = await prisma.address.create({
+          data: { userId: id, street, city, state, zipCode },
+        });
+      }
+    }
+
     res.json({
       message: "Update successful",
       updatedUser: {
@@ -284,6 +305,14 @@ const update = async (req, res) => {
             cardCv: paymentOption.cardCv,
             expirationDate: paymentOption.expirationDate,
             cardholderName: paymentOption.cardholderName,
+          }
+        : null,
+      address: address
+        ? {
+            street: address.street,
+            city: address.city,
+            state: address.state,
+            zipCode: address.zipCode,
           }
         : null,
     });
