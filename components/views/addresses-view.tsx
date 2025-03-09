@@ -51,6 +51,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffebee",
     alignItems: "center",
   },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100%",
+  },
   title: {
     fontSize: 24,
     fontWeight: "bold",

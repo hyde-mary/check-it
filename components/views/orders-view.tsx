@@ -85,7 +85,12 @@ const OrdersView = () => {
     });
   };
 
-  if (!userData || loading) return <DotsLoader />;
+  if (!userData || loading)
+    return (
+      <View style={styles.loaderContainer}>
+        <DotsLoader />
+      </View>
+    );
 
   return (
     <View style={styles.container}>
@@ -169,9 +174,17 @@ const getStatusColor = (status: string) => {
 
 const styles = StyleSheet.create({
   container: {
+    minHeight: "100%",
     flex: 1,
     padding: 16,
     backgroundColor: Colors.lightGrey,
+    borderRadius: 10,
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100%",
   },
   header: {
     fontSize: 20,

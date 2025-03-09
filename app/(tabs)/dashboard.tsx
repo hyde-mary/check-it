@@ -93,7 +93,6 @@ export default function Dashboard() {
           </LinearGradient>
         </View>
 
-        {/* Tab Navigation */}
         <View style={styles.tabContainer}>
           {["Dashboard", "Orders", "Addresses"].map((tab) => (
             <TouchableOpacity
@@ -127,10 +126,20 @@ export default function Dashboard() {
         </View>
         <View style={styles.contentContainer}>
           {selected === "Dashboard" && (
-            <DashboardView userCalories={userCalories} />
+            <View style={{ flex: 1, paddingLeft: 20, paddingRight: 20 }}>
+              <DashboardView userCalories={userCalories} />
+            </View>
           )}
-          {selected === "Orders" && <OrdersView />}
-          {selected === "Addresses" && <AddressesView />}
+          {selected === "Orders" && (
+            <View style={{ flex: 1, paddingLeft: 20, paddingRight: 20 }}>
+              <OrdersView />
+            </View>
+          )}
+          {selected === "Addresses" && (
+            <View style={{ flex: 1, paddingLeft: 20, paddingRight: 20 }}>
+              <AddressesView />
+            </View>
+          )}
         </View>
       </ScrollView>
     </LinearGradient>
@@ -139,7 +148,7 @@ export default function Dashboard() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContainer: { paddingBottom: 40 },
+  scrollContainer: { paddingBottom: 40, flexGrow: 1 },
   profileCard: {
     marginHorizontal: 20,
     marginTop: 40,
@@ -180,5 +189,5 @@ const styles = StyleSheet.create({
   activeTab: { backgroundColor: "#fff0f0" },
   tabText: { color: "#6B7280", fontWeight: "500", marginLeft: 5 },
   activeTabText: { color: "#ff9999", fontWeight: "600" },
-  contentContainer: { marginTop: 20 },
+  contentContainer: { marginTop: 20, flexGrow: 1 },
 });

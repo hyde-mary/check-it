@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { DotsLoader } from "../Loading";
 
 type userCaloriesType = {
   calories: number;
@@ -20,7 +21,12 @@ const DashboardView = ({
     userId: number;
   } | null;
 }) => {
-  if (!userCalories) return;
+  if (!userCalories)
+    return (
+      <View style={styles.loaderContainer}>
+        <DotsLoader />
+      </View>
+    );
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -118,6 +124,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#ffebee",
     padding: 20,
+    borderRadius: 20,
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100%",
   },
   title: {
     fontSize: 24,
