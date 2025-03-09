@@ -129,7 +129,7 @@ export default function AiSuggestion() {
         <View style={styles.calorieCard}>
           <Text style={styles.calorieLabel}>Daily Caloric Needs</Text>
           <Text style={styles.calorieValue}>
-            {user.caloricIntake?.caloricIntake || "--"}
+            {user.caloricIntake?.caloricIntake || "0"}
             <Text style={styles.calorieUnit}> kcal</Text>
           </Text>
         </View>

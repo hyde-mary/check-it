@@ -172,7 +172,7 @@ export default function Page() {
         text1: "Order Received",
         text2: "Your order has been marked as received!",
         position: "top",
-        visibilityTime: 3000,
+        visibilityTime: 2000,
       });
 
       bottomSheetModalRef.current?.dismiss();

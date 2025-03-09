@@ -153,6 +153,13 @@ const receive = async (req, res) => {
 
     const order = await prisma.order.findUnique({
       where: { orderId },
+      include: {
+        orderItems: {
+          include: {
+            food: true,
+          },
+        },
+      },
     });
 
     if (!order) {
@@ -165,6 +172,37 @@ const receive = async (req, res) => {
         .json({ error: "Only pending orders can be marked as received" });
     }
 
+    const totalMacros = order.orderItems.reduce(
+      (acc, item) => ({
+        calories: acc.calories + item.food.calories * item.quantity,
+        protein: acc.protein + item.food.protein * item.quantity,
+        carbs: acc.carbs + item.food.carbs * item.quantity,
+        fat: acc.fat + item.food.fat * item.quantity,
+      }),
+      { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    );
+
+    const userIntake = await prisma.userCaloricIntake.findUnique({
+      where: { userId: order.userId },
+    });
+
+    if (!userIntake) {
+      return res.status(400).json({ error: "User caloric intake not found" });
+    }
+
+    const updatedIntake = await prisma.userCaloricIntake.update({
+      where: { userId: order.userId },
+      data: {
+        caloricIntake: Math.max(
+          userIntake.caloricIntake - totalMacros.calories,
+          0
+        ),
+        protein: Math.max(userIntake.protein - totalMacros.protein, 0),
+        carbs: Math.max(userIntake.carbs - totalMacros.carbs, 0),
+        fat: Math.max(userIntake.fat - totalMacros.fat, 0),
+      },
+    });
+
     const updatedOrder = await prisma.order.update({
       where: { orderId },
       data: { status: "Delivered" },
@@ -173,6 +211,7 @@ const receive = async (req, res) => {
     res.json({
       message: "Order marked as received successfully",
       order: updatedOrder,
+      updatedIntake,
     });
   } catch (error) {
     console.error("Error marking pending orders as received:", error);
