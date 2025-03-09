@@ -2,53 +2,101 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import getImageSrc from "@/utils/getImageSrc";
 import useBasketStore from "@/store/useBasketStore";
 import Colors from "@/constants/Colors";
+import { useEffect, useState } from "react";
+import { Food } from "@prisma/client";
+import { DotsLoader } from "@/components/Loading";
+import getImageSrc from "@/utils/getImageSrc";
 
 const Dish = () => {
-  const { id, name, price, description, img, calories, protein, carbs, fat } =
-    useLocalSearchParams();
+  const { id } = useLocalSearchParams();
+  const [food, setFood] = useState<Food | null>(null);
   const router = useRouter();
-
   const { addFood } = useBasketStore();
 
+  useEffect(() => {
+    fetchFood();
+  }, []);
+
+  const fetchFood = async () => {
+    try {
+      if (!id) {
+        throw new Error("Invalid ID");
+      }
+
+      const response = await fetch("http://10.0.2.2:3000/foods/getFoodById", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ foodId: Number(id) }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error fetching from API");
+      }
+
+      const food = await response.json();
+      setFood(food);
+    } catch (error) {
+      console.error("Error fetching food info", error);
+    }
+  };
+
   const addToCart = () => {
+    if (!food) return;
+
     addFood({
       id: Number(id),
-      name: name as string,
-      price: parseFloat(price as string),
-      description: description as string,
-      img: img as string,
-      calories: Number(calories),
-      protein: Number(protein),
-      carbs: Number(carbs),
-      fat: Number(fat),
+      name: food.name,
+      price: Number(food.price),
+      description: food.description,
+      img: food.img as string,
+      calories: food.calories,
+      protein: food.protein,
+      carbs: food.carbs,
+      fat: food.fat,
     });
 
     router.back();
   };
+
+  if (!food) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100%",
+        }}
+      >
+        <DotsLoader />
+      </View>
+    );
+  }
+
+  console.log(food);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["bottom"]}>
       <View style={styles.container}>
         <View style={styles.imageContainer}>
           <Image
-            source={getImageSrc(Array.isArray(img) ? img[0] : img)}
+            source={getImageSrc(food.img)}
             style={styles.image}
             resizeMode="cover"
           />
         </View>
 
         <View style={styles.contentContainer}>
-          <Text style={styles.dishName}>{name}</Text>
-          <Text style={styles.dishDescription}>{description}</Text>
+          <Text style={styles.dishName}>{food.name}</Text>
+          <Text style={styles.dishDescription}>{food.description}</Text>
 
           <View style={styles.nutritionContainer}>
-            <NutritionRow label="🔥  Calories" value={calories as string} />
-            <NutritionRow label="🥩  Protein" value={`${protein}g`} />
-            <NutritionRow label="🍞  Carbs" value={`${carbs}g`} />
-            <NutritionRow label="🧈  Fat" value={`${fat}g`} />
+            <NutritionRow label="🔥  Calories" value={String(food.calories)} />
+            <NutritionRow label="🥩  Protein" value={`${food.protein}g`} />
+            <NutritionRow label="🍞  Carbs" value={`${food.carbs}g`} />
+            <NutritionRow label="🧈  Fat" value={`${food.fat}g`} />
           </View>
         </View>
 
@@ -60,7 +108,7 @@ const Dish = () => {
           >
             <Ionicons name="cart" size={24} color="white" style={styles.icon} />
             <Text style={styles.buttonText}>
-              Add for ₱{parseFloat(price as string).toFixed(2)}
+              Add for ₱{food?.price ? Number(food.price).toFixed(2) : "N/A"}
             </Text>
           </TouchableOpacity>
         </View>

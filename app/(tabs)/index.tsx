@@ -116,13 +116,13 @@ export default function Page() {
 
   const fetchPendingOrders = async () => {
     try {
-      const user = await getUserInfo();
-      if (!user) return;
+      const userId = await getUserInfo();
+      if (!userId) return;
 
       const response = await fetch("http://10.0.2.2:3000/order/pending", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id }),
+        body: JSON.stringify({ userId }),
       });
 
       if (!response.ok) throw new Error("Error fetching pending orders");
