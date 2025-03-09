@@ -12,7 +12,6 @@ const getMeal = async (req, res) => {
     let calories = null;
 
     try {
-      // Fetch Foods
       const responseFoods = await fetch("http://localhost:3000/foods/");
       if (!responseFoods.ok) {
         throw new Error(
@@ -21,13 +20,12 @@ const getMeal = async (req, res) => {
       }
       foods = await responseFoods.json();
 
-      // Fetch Calories - Must be a POST request with userId
       const responseCalories = await fetch(
         "http://localhost:3000/calories/userCalories",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: req.body.userId }), // Ensure userId is passed
+          body: JSON.stringify({ userId: req.body.userId }),
         }
       );
 

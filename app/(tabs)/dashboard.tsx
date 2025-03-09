@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import DashboardView from "@/components/views/dashboard-view";
 import OrdersView from "@/components/views/orders-view";
@@ -34,9 +34,11 @@ export default function Dashboard() {
 
   const [user, setUser] = useState<UserData | null>(null);
 
-  useEffect(() => {
-    fetchUserInfo();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserInfo();
+    }, [])
+  );
 
   const fetchUserInfo = async () => {
     try {

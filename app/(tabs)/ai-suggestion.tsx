@@ -10,66 +10,78 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { getUserInfo } from "@/utils/sessionManager";
-import { User } from "@prisma/client";
+import {
+  Address,
+  PaymentOption,
+  User,
+  UserCaloricIntake,
+} from "@prisma/client";
 import { DotsLoader } from "@/components/Loading";
+import { useFocusEffect } from "expo-router";
+import { useCallback } from "react";
+
+type UserData = Omit<User, "password"> & {
+  paymentOption?: PaymentOption | null;
+  address?: Address | null;
+  caloricIntake?: UserCaloricIntake | null;
+};
 
 export default function AiSuggestion() {
-  const [userCalories, setUserCalories] = useState<{
-    caloricIntake: number;
-    carbs: number;
-    fat: number;
-    protein: number;
-    userId: number;
-  } | null>(null);
-
-  const [userData, setUserData] = useState<Omit<User, "password"> | null>(null);
-
+  const [user, setUser] = useState<UserData | null>(null);
   const [suggestion, setSuggestion] = useState<any>("");
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
 
-  useEffect(() => {
-    fetchUserCalories(2);
-    fetchUserInfo();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserInfo();
+    }, [])
+  );
 
-  const fetchUserCalories = async (userId: Number) => {
+  const fetchUserInfo = async () => {
     try {
-      const response = await fetch(
-        "http://10.0.2.2:3000/calories/userCalories",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId }),
-        }
-      );
+      const userId = await getUserInfo();
 
-      const data = await response.json();
-      setUserCalories(data);
+      if (!userId) {
+        throw new Error("Error in fetching user id");
+      }
+
+      const response = await fetch("http://10.0.2.2:3000/user/getUserById", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (!response) {
+        throw new Error("Error fetching user from API");
+      }
+
+      const user = await response.json();
+
+      setUser(user);
     } catch (error) {
-      console.error("Error fetching user calories:", error);
+      console.error(
+        "Sorry, the server is busy. Please try again later.",
+        error
+      );
     }
   };
 
-  const fetchUserInfo = async () => {
-    const userInfo = await getUserInfo();
-    if (!userInfo) return null;
-    setUserData(userInfo);
-  };
-
   const fetchMealSuggestion = async () => {
-    if (!userData || !userCalories) return null;
-
     try {
       setIsSuggesting(true);
+
+      const userId = await getUserInfo();
+
+      if (!userId) return;
 
       const response = await fetch("http://10.0.2.2:3000/meal/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ userId: userData.id }),
+        body: JSON.stringify({ userId }),
       });
 
       if (!response.ok) {
@@ -89,7 +101,7 @@ export default function AiSuggestion() {
     }
   };
 
-  if (!userData || !userCalories) return <DotsLoader />;
+  if (!user) return <DotsLoader />;
 
   return (
     <LinearGradient colors={["#F7F9FC", "#EFF2F7"]} style={styles.container}>
@@ -99,17 +111,17 @@ export default function AiSuggestion() {
       >
         {/* User Header */}
         <View style={styles.userHeader}>
-          <Text style={styles.greeting}>Hello, {userData.firstName}!</Text>
+          <Text style={styles.greeting}>Hello, {user.firstName}!</Text>
         </View>
 
         {/* User Status Section */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Current Status</Text>
           <View style={styles.statusGrid}>
-            <StatusItem label="Goal" value={userData?.goals} />
-            <StatusItem label="Activity Level" value={userData.activityLevel} />
-            <StatusItem label="Weight" value={`${userData.weight} kg`} />
-            <StatusItem label="Height" value={`${userData.height} cm`} />
+            <StatusItem label="Goal" value={user.goals} />
+            <StatusItem label="Activity Level" value={user.activityLevel} />
+            <StatusItem label="Weight" value={`${user.weight} kg`} />
+            <StatusItem label="Height" value={`${user.height} cm`} />
           </View>
         </View>
 
@@ -117,7 +129,7 @@ export default function AiSuggestion() {
         <View style={styles.calorieCard}>
           <Text style={styles.calorieLabel}>Daily Caloric Needs</Text>
           <Text style={styles.calorieValue}>
-            {userCalories.caloricIntake || "--"}
+            {user.caloricIntake?.caloricIntake || "--"}
             <Text style={styles.calorieUnit}> kcal</Text>
           </Text>
         </View>
@@ -128,19 +140,31 @@ export default function AiSuggestion() {
           <View style={styles.macrosContainer}>
             <MacroPill
               label="Protein"
-              value={parseFloat(userCalories.fat.toFixed(2)) || 0}
+              value={
+                user.caloricIntake?.protein
+                  ? Number(user.caloricIntake.protein.toFixed(2))
+                  : 0
+              }
               unit="g"
               color="#B03A2E"
             />
             <MacroPill
               label="Carbs"
-              value={parseFloat(userCalories.fat.toFixed(2)) || 0}
+              value={
+                user.caloricIntake?.carbs
+                  ? Number(user.caloricIntake.carbs.toFixed(2))
+                  : 0
+              }
               unit="g"
               color="#F5A623"
             />
             <MacroPill
               label="Fat"
-              value={parseFloat(userCalories.fat.toFixed(2)) || 0}
+              value={
+                user.caloricIntake?.fat
+                  ? Number(user.caloricIntake.fat.toFixed(2))
+                  : 0
+              }
               unit="g"
               color="#50E3C2"
             />
@@ -205,7 +229,7 @@ export default function AiSuggestion() {
 
             <Text style={styles.disclaimer}>
               Based on your daily needs of{" "}
-              {userCalories.caloricIntake.toFixed(2)} calories
+              {user.caloricIntake?.caloricIntake.toFixed(2)} calories
             </Text>
           </View>
         )}
