@@ -8,7 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Colors from "@/constants/Colors";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, router } from "expo-router";
@@ -18,6 +18,22 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "react-native";
 import getImageSrc from "@/utils/getImageSrc";
 import { getUserInfo } from "@/utils/sessionManager";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+  Address,
+  PaymentOption,
+  User,
+  UserCaloricIntake,
+} from "@prisma/client";
+import { DotsLoader } from "@/components/Loading";
+
+type UserData = Omit<User, "password"> & {
+  paymentOption?: PaymentOption | null;
+  address?: Address | null;
+  caloricIntake?: UserCaloricIntake | null;
+};
+
+type MacroKey = "caloricIntake" | "protein" | "carbs" | "fat";
 
 const Basket = () => {
   const {
@@ -30,15 +46,56 @@ const Basket = () => {
     total,
   } = useBasketStore();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [orderCompleted, setOrderCompleted] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<"cash" | "card">(
     "cash"
   );
+  const [user, setUser] = useState<UserData | null>(null);
+
+  useEffect(() => {
+    fetchUserInfo();
+  }, []);
+
+  const fetchUserInfo = async () => {
+    try {
+      const userId = await getUserInfo();
+
+      if (!userId) {
+        throw new Error("Missing user info");
+      }
+
+      const response = await fetch("http://10.0.2.2:3000/user/getUserById", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (!response) {
+        throw new Error("Error fetching user from API");
+      }
+
+      const user = await response.json();
+      user.paymentOption = user.paymentOptions?.[0] || null;
+
+      setUser(user);
+    } catch (error) {
+      console.error("Error fetching user info");
+    }
+  };
 
   const fees = {
     service: 20, // 20 pesos ig
     delivery: 60, // 60 pesos ig
   };
+
+  const totalMacros = foods.reduce(
+    (acc, food) => ({
+      calories: acc.calories + food.calories * food.quantity,
+      protein: acc.protein + food.protein * food.quantity,
+      carbs: acc.carbs + food.carbs * food.quantity,
+      fat: acc.fat + food.fat * food.quantity,
+    }),
+    { calories: 0, protein: 0, carbs: 0, fat: 0 }
+  );
 
   const formatCurrency = (value: number) =>
     value.toLocaleString("en-US", { style: "currency", currency: "PHP" });
@@ -104,22 +161,10 @@ const Basket = () => {
     }
   };
 
-  if (orderCompleted) {
-    return (
-      <View style={styles.centeredContainer}>
-        <Ionicons name="checkmark-circle" size={80} color={Colors.primary} />
-        <Text style={styles.successTitle}>Order Confirmed!</Text>
-        <Text style={styles.successText}>
-          Your food is being prepared and will arrive soon
-        </Text>
-        <Link href="/" asChild>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>Start New Order</Text>
-          </TouchableOpacity>
-        </Link>
-      </View>
-    );
-  }
+  if (!user) return <DotsLoader />;
+
+  // console.log(user);
+  // console.log(foods);
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom"]}>
@@ -224,6 +269,100 @@ const Basket = () => {
                     <Text style={styles.paymentText}>Credit/Debit Card</Text>
                   </TouchableOpacity>
                 </View>
+                <View style={styles.macrosContainer}>
+                  <Text style={styles.macrosTitle}>Nutrition Summary</Text>
+
+                  {["caloricIntake", "protein", "carbs", "fat"].map((macro) => {
+                    const macroKey = macro as MacroKey;
+                    const userLimit = user.caloricIntake?.[macroKey] || 0;
+                    const consumed =
+                      totalMacros[
+                        macro === "caloricIntake" ? "calories" : macroKey
+                      ];
+                    const remaining = userLimit - consumed;
+                    const progress = Math.min(
+                      (consumed / userLimit) * 100,
+                      100
+                    );
+
+                    return (
+                      <View key={macro} style={styles.macroCard}>
+                        {/* Macro Header */}
+                        <View style={styles.macroHeader}>
+                          <View style={styles.macroLabel}>
+                            <MaterialCommunityIcons
+                              name={
+                                macro === "caloricIntake"
+                                  ? "fire"
+                                  : macro === "protein"
+                                  ? "dumbbell"
+                                  : macro === "carbs"
+                                  ? "noodles"
+                                  : "egg"
+                              }
+                              size={20}
+                              color={Colors.medium}
+                            />
+                            <Text style={styles.macroText}>
+                              {macro === "caloricIntake"
+                                ? "Calories"
+                                : macro.charAt(0).toUpperCase() +
+                                  macro.slice(1)}
+                            </Text>
+                          </View>
+                          <View style={styles.macroValues}>
+                            <Text style={styles.consumedValue}>
+                              {consumed.toFixed(0)}
+                              {macro === "calories" ? "kcal" : "g"}
+                            </Text>
+                            <Text style={styles.totalValue}>
+                              / {userLimit.toFixed(0)}
+                              {macro === "calories" ? "kcal" : "g"}
+                            </Text>
+                          </View>
+                        </View>
+
+                        {/* Progress Bar */}
+                        <View style={styles.progressBar}>
+                          <View
+                            style={[
+                              styles.progressFill,
+                              {
+                                width: `${progress}%`,
+                                backgroundColor:
+                                  remaining < 0 ? "#ff4444" : Colors.primary,
+                              },
+                            ]}
+                          />
+                        </View>
+
+                        {/* Remaining/Over Indicator */}
+                        <View style={styles.remainingContainer}>
+                          <Text
+                            style={[
+                              styles.remainingText,
+                              {
+                                color:
+                                  remaining < 0 ? "#ff4444" : Colors.primary,
+                              },
+                            ]}
+                          >
+                            {remaining >= 0
+                              ? `${remaining.toFixed(0)} ${
+                                  macro === "calories" ? "kcal" : "g"
+                                } remaining`
+                              : `${Math.abs(remaining).toFixed(0)} ${
+                                  macro === "calories" ? "kcal" : "g"
+                                } over`}
+                          </Text>
+                          <Text style={styles.percentageText}>
+                            {progress.toFixed(0)}%
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
               </View>
             }
           />
@@ -258,6 +397,67 @@ const FeeRow = ({ label, value }: { label: string; value: number }) => (
 );
 
 const styles = StyleSheet.create({
+  macrosContainer: {
+    backgroundColor: "#fff",
+    padding: 16,
+    marginTop: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.lightGrey,
+  },
+  macroCard: {
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.lightGrey,
+  },
+  lastMacroCard: {
+    borderBottomWidth: 0,
+    marginBottom: 0,
+    paddingBottom: 0,
+  },
+  macroHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  macroValues: {
+    flexDirection: "row",
+    alignItems: "baseline",
+  },
+  consumedValue: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.primary,
+  },
+  totalValue: {
+    fontSize: 14,
+    color: Colors.medium,
+  },
+  progressBar: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.lightGrey,
+    marginBottom: 8,
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 4,
+  },
+  remainingContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  remainingText: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  percentageText: {
+    fontSize: 12,
+    color: Colors.medium,
+  },
   container: {
     flex: 1,
     backgroundColor: Colors.lightGrey,
@@ -375,11 +575,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
-  totalValue: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: Colors.primary,
-  },
   button: {
     backgroundColor: Colors.primary,
     borderRadius: 8,
@@ -438,7 +633,6 @@ const styles = StyleSheet.create({
   paymentSection: {
     backgroundColor: "#fff",
     padding: 16,
-    marginBottom: 40,
     marginTop: 8,
   },
   paymentTitle: {
@@ -464,6 +658,39 @@ const styles = StyleSheet.create({
   paymentText: {
     fontSize: 16,
     color: Colors.medium,
+  },
+  macrosTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.primary,
+    marginBottom: 16,
+  },
+  macroRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  macroLabel: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  macroText: {
+    fontSize: 14,
+    color: Colors.medium,
+  },
+  macroValue: {
+    fontSize: 14,
+    color: Colors.medium,
+  },
+  macroDivider: {
+    fontSize: 14,
+    color: Colors.lightGrey,
+  },
+  macroRemaining: {
+    fontSize: 14,
+    fontWeight: "500",
   },
 });
 

@@ -75,8 +75,6 @@ const Dish = () => {
     );
   }
 
-  console.log(food);
-
   return (
     <SafeAreaView style={styles.safeArea} edges={["bottom"]}>
       <View style={styles.container}>
