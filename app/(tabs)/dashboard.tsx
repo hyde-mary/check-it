@@ -13,53 +13,57 @@ import DashboardView from "@/components/views/dashboard-view";
 import OrdersView from "@/components/views/orders-view";
 import AddressesView from "@/components/views/addresses-view";
 import { getUserInfo } from "@/utils/sessionManager";
-import { User } from "@prisma/client";
+import {
+  Address,
+  PaymentOption,
+  User,
+  UserCaloricIntake,
+} from "@prisma/client";
 import { DotsLoader } from "@/components/Loading";
+
+type UserData = Omit<User, "password"> & {
+  paymentOption?: PaymentOption[] | null;
+  address?: Address | null;
+  caloricIntake?: UserCaloricIntake | null;
+};
 
 export default function Dashboard() {
   const [selected, setSelected] = useState<
     "Dashboard" | "Orders" | "Addresses"
   >("Dashboard");
-  const [userCalories, setUserCalories] = useState<{
-    caloricIntake: number;
-    carbs: number;
-    fat: number;
-    protein: number;
-    userId: number;
-  } | null>(null);
 
-  const [userData, setUserData] = useState<Omit<User, "password"> | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
 
   useEffect(() => {
-    fetchUserCalories(2);
     fetchUserInfo();
   }, []);
 
-  const fetchUserCalories = async (userId: Number) => {
+  const fetchUserInfo = async () => {
     try {
-      const response = await fetch(
-        "http://10.0.2.2:3000/calories/userCalories",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId }),
-        }
-      );
+      const userId = await getUserInfo();
 
-      const data = await response.json();
-      setUserCalories(data);
+      if (!userId) {
+        throw new Error("Missing user info");
+      }
+
+      const response = await fetch("http://10.0.2.2:3000/user/getUserById", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (!response) {
+        throw new Error("Error fetching user from API");
+      }
+
+      const user = await response.json();
+      setUser(user);
     } catch (error) {
-      console.error("Error fetching user calories:", error);
+      console.error("Error fetching user info");
     }
   };
 
-  const fetchUserInfo = async () => {
-    const userInfo = await getUserInfo();
-    if (!userInfo) return null;
-    setUserData(userInfo);
-  };
-
-  if (!userData) return <DotsLoader />;
+  if (!user) return <DotsLoader />;
 
   return (
     <LinearGradient colors={["#ffe6e6", "#ff9999"]} style={styles.container}>
@@ -77,11 +81,9 @@ export default function Dashboard() {
               <Ionicons name="person-circle" size={40} color="white" />
               <View style={styles.profileTextContainer}>
                 <Text style={styles.profileName}>
-                  {userData
-                    ? `${userData.firstName} ${userData.lastName}`
-                    : "User"}
+                  {user ? `${user.firstName} ${user.lastName}` : "User"}
                 </Text>
-                <Text style={styles.profileEmail}>{userData.email}</Text>
+                <Text style={styles.profileEmail}>{user.email}</Text>
               </View>
               <Ionicons
                 name="chevron-forward"
@@ -127,7 +129,7 @@ export default function Dashboard() {
         <View style={styles.contentContainer}>
           {selected === "Dashboard" && (
             <View style={{ flex: 1, paddingLeft: 20, paddingRight: 20 }}>
-              <DashboardView userCalories={userCalories} />
+              <DashboardView userCalories={user.caloricIntake} />
             </View>
           )}
           {selected === "Orders" && (

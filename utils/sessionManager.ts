@@ -49,10 +49,10 @@ export const saveUserInfo = async (userInfo: object) => {
 };
 
 // get user info
-export const getUserInfo = async (): Promise<Omit<User, "password"> | null> => {
+export const getUserInfo = async (): Promise<{ userId: number } | null> => {
   try {
     const jsonValue = await AsyncStorage.getItem(USER_INFO_KEY);
-    return jsonValue ? JSON.parse(jsonValue) : null;
+    return jsonValue ? (JSON.parse(jsonValue) as { userId: number }) : null;
   } catch (error) {
     console.error("Error retrieving user info:", error);
     return null;

@@ -67,18 +67,16 @@ export default function UserGoals() {
 
       const data = await response.json();
 
-      if (response.ok) {
-        Alert.alert("Success", "User registered successfully!");
-        await saveToken(data.token);
-
-        const { password, ...userWithoutPassword } = data.user;
-        await saveUserInfo(userWithoutPassword);
-
-        resetUserData();
-        router.replace("/");
-      } else {
+      if (!response.ok) {
         Alert.alert("Error", data.error || "Something went wrong.");
       }
+
+      // haba HAHA
+      await saveToken(data.token);
+      await saveUserInfo(data.userId);
+      resetUserData();
+      Alert.alert("Success", "User registered successfully!");
+      router.replace("/");
     } catch (error) {
       console.error("Error registering user:", error);
       Alert.alert("Error", "Failed to connect to the server.");

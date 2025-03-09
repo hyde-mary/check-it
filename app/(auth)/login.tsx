@@ -43,17 +43,15 @@ export default function Login() {
 
       const data = await response.json();
 
-      if (response.ok) {
-        Alert.alert("Success", "Login successful!");
-        await saveToken(data.token);
-
-        const { password, ...userWithoutPassword } = data.user;
-        await saveUserInfo(userWithoutPassword);
-
-        router.replace("/");
-      } else {
-        setError(data.error || "Invalid credentials. Please try again.");
+      if (!response.ok) {
+        setError(data.error || "Invalid Credentials. Please try again.");
       }
+
+      await saveToken(data.token);
+      await saveUserInfo(data.userId);
+
+      Alert.alert("Success", "Login successful!");
+      router.replace("/");
     } catch (error) {
       console.error("Login error:", error);
       setError("Failed to connect to the server.");

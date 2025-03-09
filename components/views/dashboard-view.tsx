@@ -2,31 +2,20 @@ import React from "react";
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { DotsLoader } from "../Loading";
-
-type userCaloriesType = {
-  calories: number;
-  carbs: number;
-  fat: number;
-  protein: number;
-};
+import { UserCaloricIntake } from "@prisma/client";
 
 const DashboardView = ({
   userCalories,
 }: {
-  userCalories: {
-    caloricIntake: number;
-    carbs: number;
-    fat: number;
-    protein: number;
-    userId: number;
-  } | null;
+  userCalories?: UserCaloricIntake | null;
 }) => {
-  if (!userCalories)
+  if (!userCalories) {
     return (
       <View style={styles.loaderContainer}>
         <DotsLoader />
       </View>
     );
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>

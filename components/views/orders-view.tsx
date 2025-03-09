@@ -12,6 +12,7 @@ import { Order, User } from "@prisma/client";
 import { DotsLoader } from "../Loading";
 import Colors from "@/constants/Colors";
 import getImageSrc from "@/utils/getImageSrc";
+import { Ionicons } from "@expo/vector-icons";
 
 type OrderWithDetails = Order & {
   restaurant: {
@@ -26,7 +27,6 @@ type OrderWithDetails = Order & {
 };
 
 const OrdersView = () => {
-  const [userData, setUserData] = useState<Omit<User, "password"> | null>(null);
   const [userOrders, setUserOrders] = useState<OrderWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -37,21 +37,30 @@ const OrdersView = () => {
 
   const fetchOrders = async () => {
     try {
-      const user = await getUserInfo();
-      if (!user) return;
+      const userId = await getUserInfo();
 
-      setUserData(user);
+      if (!userId) {
+        throw new Error("User Id is missing, something went wrong");
+      }
 
       const response = await fetch("http://10.0.2.2:3000/order/userOrders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id }),
+        body: JSON.stringify({ userId }),
       });
 
-      if (!response.ok) throw new Error("Error fetching orders");
+      if (!response.ok) {
+        throw new Error("Error fetching orders");
+      }
 
-      const orders = await response.json();
-      setUserOrders(orders);
+      const data = await response.json();
+
+      if (data.orders && data.orders.length === 0) {
+        setUserOrders([]);
+        return;
+      }
+
+      setUserOrders(data.orders);
     } catch (error) {
       console.error("Error fetching orders:", error);
     } finally {
@@ -85,7 +94,7 @@ const OrdersView = () => {
     });
   };
 
-  if (!userData || loading)
+  if (!userOrders || loading)
     return (
       <View style={styles.loaderContainer}>
         <DotsLoader />
@@ -97,7 +106,18 @@ const OrdersView = () => {
       <Text style={styles.header}>Order History</Text>
 
       {userOrders.length === 0 ? (
-        <Text style={styles.noOrders}>No orders found</Text>
+        <View style={styles.emptyContainer}>
+          <Ionicons
+            name="receipt-outline"
+            size={60}
+            color={Colors.medium}
+            style={styles.emptyIcon}
+          />
+          <Text style={styles.emptyTitle}>No Orders Yet</Text>
+          <Text style={styles.emptyText}>
+            Your order history will appear here
+          </Text>
+        </View>
       ) : (
         userOrders.map((item) => (
           <View key={item.orderId} style={styles.orderCard}>
@@ -307,6 +327,30 @@ const styles = StyleSheet.create({
     color: Colors.medium,
     marginTop: 40,
     fontSize: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 100,
+    paddingHorizontal: 40,
+  },
+  emptyIcon: {
+    opacity: 0.8,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: Colors.mediumDark,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  emptyText: {
+    fontSize: 16,
+    color: Colors.medium,
+    textAlign: "center",
+    lineHeight: 24,
   },
 });
 

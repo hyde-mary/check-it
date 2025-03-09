@@ -15,6 +15,43 @@ const getUser = async (req, res) => {
   }
 };
 
+const getUserById = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    // haba pero just to exclude the password
+    const user = await prisma.user.findUnique({
+      where: { id: Number(userId) },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        middleName: true,
+        email: true,
+        birthday: true,
+        height: true,
+        weight: true,
+        bmi: true,
+        gender: true,
+        activityLevel: true,
+        goals: true,
+        caloricIntake: true,
+        paymentOptions: true,
+        address: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found!" });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error("Get user by ID error: ", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 const calculateCaloricIntake = (user) => {
   const { birthday, gender, weight, height, activityLevel, goals } = user;
 
@@ -121,26 +158,7 @@ const register = async (req, res) => {
     res.status(201).json({
       message: "User registered successfully",
       token,
-      user: {
-        id: newUser.id,
-        firstName: newUser.firstName,
-        middleName: newUser.middleName,
-        lastName: newUser.lastName,
-        email: newUser.email,
-        birthday: newUser.birthday,
-        height: newUser.height,
-        weight: newUser.weight,
-        bmi,
-        gender: newUser.gender,
-        activityLevel: newUser.activityLevel,
-        goals: newUser.goals,
-      },
-      caloricIntake: {
-        caloricIntake,
-        protein,
-        carbs,
-        fat,
-      },
+      userId: newUser.id,
     });
   } catch (error) {
     console.error("Registration error: ", error);
@@ -166,7 +184,7 @@ const login = async (req, res) => {
       expiresIn: "7d",
     });
 
-    res.json({ message: "Login successful", token, user });
+    res.json({ message: "Login successful", token, userId: user.id });
   } catch (error) {
     console.error("Login error: ", error);
     res.status(500).json({ error: "Internal server error" });
@@ -175,7 +193,9 @@ const login = async (req, res) => {
 
 const update = async (req, res) => {
   try {
-    let {
+    const { user } = req.body;
+
+    const {
       id,
       firstName,
       lastName,
@@ -184,30 +204,12 @@ const update = async (req, res) => {
       weight,
       activityLevel,
       goals,
-      cardNumber,
-      expiryDate,
-      cvc,
-      street,
-      city,
-      state,
-      zipCode,
-    } = req.body;
+      paymentOption,
+      address,
+    } = user;
 
-    id = Number(id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: "Invalid user ID" });
-    }
-
-    const user = await prisma.user.findUnique({ where: { id } });
-    if (!user) {
-      return res.status(404).json({ error: "User not found!" });
-    }
-
-    const emailExists = await prisma.user.findFirst({
-      where: { email, NOT: { id } },
-    });
-    if (emailExists) {
-      return res.status(400).json({ error: "Email is already in use." });
+    if (!id) {
+      return res.status(400).json({ error: "User ID is required." });
     }
 
     const updatedUser = await prisma.user.update({
@@ -238,83 +240,86 @@ const update = async (req, res) => {
       create: { userId: id, caloricIntake, protein, carbs, fat },
     });
 
-    let paymentOption = null;
-    if (cardNumber && expiryDate && cvc) {
+    if (
+      paymentOption?.cardNumber &&
+      paymentOption?.expirationDate &&
+      paymentOption?.cardCv
+    ) {
       const existingPaymentOption = await prisma.paymentOption.findFirst({
         where: { userId: id },
       });
 
-      if (existingPaymentOption) {
-        paymentOption = await prisma.paymentOption.update({
-          where: { id: existingPaymentOption.id },
-          data: {
-            cardNumber,
-            cardCv: cvc,
-            expirationDate: new Date(expiryDate),
-            cardholderName: `${updatedUser.firstName} ${updatedUser.lastName}`,
-          },
-        });
-      } else {
-        paymentOption = await prisma.paymentOption.create({
-          data: {
-            cardNumber,
-            cardCv: cvc,
-            expirationDate: new Date(expiryDate),
-            cardholderName: `${updatedUser.firstName} ${updatedUser.lastName}`,
-            userId: id,
-          },
-        });
+      let expirationDateISO;
+
+      // If expirationDate is a Date object, keep it.
+      if (paymentOption.expirationDate instanceof Date) {
+        expirationDateISO = paymentOption.expirationDate;
       }
+      // If expirationDate is an ISO string (from DB), convert it.
+      else if (!isNaN(Date.parse(paymentOption.expirationDate))) {
+        expirationDateISO = new Date(paymentOption.expirationDate);
+      }
+      // If it's a "yyyy-mm" string, format it.
+      else {
+        expirationDateISO = new Date(
+          `${paymentOption.expirationDate}-01T00:00:00.000Z`
+        );
+      }
+
+      // Ensure the date is valid before proceeding
+      if (!expirationDateISO || isNaN(expirationDateISO.getTime())) {
+        return res
+          .status(400)
+          .json({ error: "Invalid expiration date format." });
+      }
+
+      updatedPaymentOption = await prisma.paymentOption.upsert({
+        where: existingPaymentOption
+          ? { id: existingPaymentOption.id }
+          : { id: -1 },
+        update: {
+          cardNumber: paymentOption.cardNumber,
+          expirationDate: expirationDateISO,
+          cardCv: paymentOption.cardCv,
+          cardholderName: `${updatedUser.firstName} ${updatedUser.lastName}`,
+        },
+        create: {
+          userId: id,
+          cardNumber: paymentOption.cardNumber,
+          expirationDate: expirationDateISO,
+          cardCv: paymentOption.cardCv,
+          cardholderName: `${updatedUser.firstName} ${updatedUser.lastName}`,
+        },
+      });
     }
 
-    let address = null;
-    if (street && city && state && zipCode) {
-      const existingAddress = await prisma.address.findUnique({
+    let updatedAddress = null;
+    if (
+      address?.street &&
+      address?.city &&
+      address?.state &&
+      address?.zipCode
+    ) {
+      updatedAddress = await prisma.address.upsert({
         where: { userId: id },
+        update: {
+          street: address.street,
+          city: address.city,
+          state: address.state,
+          zipCode: address.zipCode,
+        },
+        create: {
+          userId: id,
+          street: address.street,
+          city: address.city,
+          state: address.state,
+          zipCode: address.zipCode,
+        },
       });
-
-      if (existingAddress) {
-        address = await prisma.address.update({
-          where: { userId: id },
-          data: { street, city, state, zipCode },
-        });
-      } else {
-        address = await prisma.address.create({
-          data: { userId: id, street, city, state, zipCode },
-        });
-      }
     }
 
     res.json({
-      message: "Update successful",
-      updatedUser: {
-        id: updatedUser.id,
-        firstName: updatedUser.firstName,
-        lastName: updatedUser.lastName,
-        email: updatedUser.email,
-        height: updatedUser.height,
-        weight: updatedUser.weight,
-        activityLevel: updatedUser.activityLevel,
-        goals: updatedUser.goals,
-      },
-      caloricIntake: { caloricIntake, protein, carbs, fat },
-      paymentOption: paymentOption
-        ? {
-            paymentId: paymentOption.id,
-            cardNumber: paymentOption.cardNumber,
-            cardCv: paymentOption.cardCv,
-            expirationDate: paymentOption.expirationDate,
-            cardholderName: paymentOption.cardholderName,
-          }
-        : null,
-      address: address
-        ? {
-            street: address.street,
-            city: address.city,
-            state: address.state,
-            zipCode: address.zipCode,
-          }
-        : null,
+      message: "User updated successfully",
     });
   } catch (error) {
     console.error("Update error: ", error);
@@ -322,4 +327,4 @@ const update = async (req, res) => {
   }
 };
 
-module.exports = { getUser, register, login, update };
+module.exports = { getUser, register, login, update, getUserById };

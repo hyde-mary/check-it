@@ -11,13 +11,15 @@ const userOrders = async (req, res) => {
     }
 
     const orders = await prisma.order.findMany({
-      where: { userId: Number(userId) },
+      where: { userId },
       orderBy: { orderTime: "desc" },
       include: { restaurant: true },
     });
 
     if (orders.length === 0) {
-      return res.status(404).json({ error: "No orders found for this user" });
+      return res
+        .status(200)
+        .json({ message: "No orders found for this user", orders: [] });
     }
 
     res.json(orders);

@@ -16,44 +16,88 @@ import {
   removeUserInfo,
 } from "@/utils/sessionManager";
 import { useRouter } from "expo-router";
-import { User } from "@prisma/client";
+import {
+  Address,
+  PaymentOption,
+  User,
+  UserCaloricIntake,
+} from "@prisma/client";
 import { DotsLoader } from "@/components/Loading";
+import Toast from "react-native-toast-message";
+import Colors from "@/constants/Colors";
+
+type UserData = Omit<User, "password"> & {
+  paymentOption?: PaymentOption | null;
+  address?: Address | null;
+  caloricIntake?: UserCaloricIntake | null;
+};
 
 const Profile = () => {
   const router = useRouter();
-
-  const [userData, setUserData] = useState<Pick<
-    User,
-    | "id"
-    | "firstName"
-    | "lastName"
-    | "email"
-    | "height"
-    | "weight"
-    | "activityLevel"
-    | "goals"
-  > | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     fetchUserInfo();
   }, []);
 
-  const [loading, setLoading] = useState<boolean>(false);
-
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
-  const [cvc, setCvc] = useState("");
-
-  const [street, setStreet] = useState("");
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
-  const [zipCode, setZipCode] = useState("");
-
   const fetchUserInfo = async () => {
-    const userInfo = await getUserInfo();
-    if (userInfo) {
-      setUserData(userInfo);
+    try {
+      const userId = await getUserInfo();
+
+      if (!userId) {
+        throw new Error("Missing user info");
+      }
+
+      const response = await fetch("http://10.0.2.2:3000/user/getUserById", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (!response) {
+        throw new Error("Error fetching user from API");
+      }
+
+      const user = await response.json();
+      user.paymentOption = user.paymentOptions?.[0] || null;
+
+      setUser(user);
+    } catch (error) {
+      console.error("Error fetching user info");
     }
+  };
+
+  const handleChange = (
+    key: keyof UserData,
+    value: any,
+    nestedKey?: string
+  ) => {
+    setUser((prev) => {
+      if (!prev) return null;
+
+      if (key === "paymentOption" && nestedKey) {
+        return {
+          ...prev,
+          paymentOption: {
+            ...(prev.paymentOption || {}),
+            [nestedKey]: value,
+          },
+        };
+      }
+
+      if (nestedKey) {
+        return {
+          ...prev,
+          [key]: {
+            ...(prev[key] as Record<string, any>),
+            [nestedKey]: value,
+          },
+        };
+      }
+
+      return { ...prev, [key]: value };
+    });
   };
 
   const activityLevelMapping: { [key: string]: string } = {
@@ -68,53 +112,31 @@ const Profile = () => {
     "Gain Weight": "GainWeight",
   };
 
-  const handleChange = (key: string, value: string | number) => {
-    if (key === "activityLevel" && typeof value === "string") {
-      value = activityLevelMapping[value] || value;
-    }
-    if (key === "goals" && typeof value === "string") {
-      value = goalsMapping[value] || value;
-    }
-
-    setUserData((prev) => (prev ? { ...prev, [key]: value } : null));
-  };
-
   const handleSave = async () => {
-    if (!userData) return null;
-
     try {
       setLoading(true);
+
       const response = await fetch("http://10.0.2.2:3000/user/update", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          id: userData.id,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          email: userData.email,
-          height: userData.height,
-          weight: userData.weight,
-          activityLevel: userData.activityLevel,
-          goals: userData.goals,
-          cardNumber,
-          expiryDate,
-          cvc,
-          street,
-          city,
-          state,
-          zipCode,
-        }),
+        body: JSON.stringify({ user }),
       });
 
-      const data = await response.json();
-      await saveUserInfo(userData);
       if (!response.ok) {
-        console.error("Update failed:", data.error);
-      } else {
-        alert("Profile updated!");
+        throw new Error("Response not ok");
       }
+
+      Toast.show({
+        type: "success",
+        text1: "Profile Updated",
+        text2: "Your Profile has been Updated!",
+        position: "top",
+        visibilityTime: 3000,
+      });
+
+      fetchUserInfo();
     } catch (error) {
       console.error("Error updating profile, please try again later.", error);
     } finally {
@@ -128,7 +150,9 @@ const Profile = () => {
     router.replace("/login");
   };
 
-  if (!userData) return <DotsLoader />;
+  if (!user) return <DotsLoader />;
+
+  // console.log(user);
 
   return (
     <LinearGradient colors={["#ffe6e6", "#ff9999"]} style={styles.container}>
@@ -142,7 +166,7 @@ const Profile = () => {
               style={styles.input}
               placeholder="First Name"
               placeholderTextColor="#6B7280"
-              value={userData.firstName}
+              value={user.firstName}
               onChangeText={(text) => handleChange("firstName", text)}
             />
           </View>
@@ -153,7 +177,7 @@ const Profile = () => {
               style={styles.input}
               placeholder="Last Name"
               placeholderTextColor="#6B7280"
-              value={userData.lastName}
+              value={user.lastName}
               onChangeText={(text) => handleChange("lastName", text)}
             />
           </View>
@@ -164,7 +188,7 @@ const Profile = () => {
               style={styles.input}
               placeholder="Email"
               placeholderTextColor="#6B7280"
-              value={userData.email}
+              value={user.email}
               onChangeText={(text) => handleChange("email", text)}
               keyboardType="email-address"
             />
@@ -179,7 +203,7 @@ const Profile = () => {
                 style={styles.input}
                 placeholder="Height (cm)"
                 placeholderTextColor="#6B7280"
-                value={String(userData.height)}
+                value={String(user.height)}
                 onChangeText={(text) =>
                   handleChange("height", parseFloat(text) || 0)
                 }
@@ -193,7 +217,7 @@ const Profile = () => {
                 style={styles.input}
                 placeholder="Weight (kg)"
                 placeholderTextColor="#6B7280"
-                value={String(userData.weight)}
+                value={String(user.weight)}
                 onChangeText={(text) =>
                   handleChange("weight", parseFloat(text) || 0)
                 }
@@ -210,7 +234,7 @@ const Profile = () => {
                 key={level}
                 style={[
                   styles.optionButton,
-                  userData.activityLevel === activityLevelMapping[level] &&
+                  user.activityLevel === activityLevelMapping[level] &&
                     styles.selectedOption,
                 ]}
                 onPress={() =>
@@ -228,8 +252,7 @@ const Profile = () => {
                 key={goal}
                 style={[
                   styles.optionButton,
-                  userData.goals === goalsMapping[goal] &&
-                    styles.selectedOption,
+                  user.goals === goalsMapping[goal] && styles.selectedOption,
                 ]}
                 onPress={() => handleChange("goals", goalsMapping[goal])}
               >
@@ -247,8 +270,10 @@ const Profile = () => {
               style={styles.input}
               placeholder="Card Number"
               placeholderTextColor="#6B7280"
-              value={cardNumber}
-              onChangeText={setCardNumber}
+              value={user.paymentOption?.cardNumber || ""}
+              onChangeText={(text) =>
+                handleChange("paymentOption", text, "cardNumber")
+              }
               keyboardType="numeric"
               maxLength={15}
             />
@@ -259,11 +284,17 @@ const Profile = () => {
               <Ionicons name="calendar-outline" size={20} color="#ff6666" />
               <TextInput
                 style={styles.input}
-                placeholder="MM/YY"
+                placeholder="YYYY/MM"
                 placeholderTextColor="#6B7280"
-                value={expiryDate}
-                onChangeText={setExpiryDate}
-                maxLength={5}
+                value={
+                  user.paymentOption?.expirationDate
+                    ? String(user.paymentOption.expirationDate).slice(0, 7)
+                    : ""
+                }
+                onChangeText={(text) =>
+                  handleChange("paymentOption", text, "expirationDate")
+                }
+                maxLength={7}
               />
             </View>
 
@@ -273,8 +304,14 @@ const Profile = () => {
                 style={styles.input}
                 placeholder="CVC"
                 placeholderTextColor="#6B7280"
-                value={cvc}
-                onChangeText={setCvc}
+                value={
+                  user.paymentOption?.cardCv
+                    ? String(user.paymentOption.cardCv)
+                    : ""
+                }
+                onChangeText={(text) =>
+                  handleChange("paymentOption", text, "cardCv")
+                }
                 keyboardType="numeric"
                 maxLength={3}
               />
@@ -290,8 +327,8 @@ const Profile = () => {
               style={styles.input}
               placeholder="Street Address"
               placeholderTextColor="#6B7280"
-              value={street || ""}
-              onChangeText={(text) => setStreet(text)}
+              value={user.address?.street || ""}
+              onChangeText={(text) => handleChange("address", text, "street")}
             />
           </View>
 
@@ -302,8 +339,8 @@ const Profile = () => {
                 style={styles.input}
                 placeholder="City"
                 placeholderTextColor="#6B7280"
-                value={city || ""}
-                onChangeText={(text) => setCity(text)}
+                value={user.address?.city || ""}
+                onChangeText={(text) => handleChange("address", text, "city")}
               />
             </View>
 
@@ -313,8 +350,8 @@ const Profile = () => {
                 style={styles.input}
                 placeholder="State"
                 placeholderTextColor="#6B7280"
-                value={state || ""}
-                onChangeText={(text) => setState(text)}
+                value={user.address?.state || ""}
+                onChangeText={(text) => handleChange("address", text, "state")}
               />
             </View>
           </View>
@@ -325,15 +362,15 @@ const Profile = () => {
               style={styles.input}
               placeholder="ZIP Code"
               placeholderTextColor="#6B7280"
-              value={zipCode || ""}
-              onChangeText={(text) => setZipCode(text)}
+              value={user.address?.zipCode || ""}
+              onChangeText={(text) => handleChange("address", text, "zipCode")}
               keyboardType="numeric"
               maxLength={5}
             />
           </View>
 
           <TouchableOpacity
-            style={styles.saveButton}
+            style={[styles.saveButton, loading && styles.disabledButton]}
             onPress={handleSave}
             disabled={loading}
           >
@@ -425,6 +462,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 24,
     gap: 10,
+  },
+  disabledButton: {
+    backgroundColor: Colors.mediumDark,
+    opacity: 0.7,
   },
   logoutButtonText: { color: "white", fontSize: 16, fontWeight: "600" },
 });
