@@ -28,9 +28,11 @@ type UserData = Omit<User, "password"> & {
 };
 
 export default function Dashboard() {
-  const [selected, setSelected] = useState<
-    "Dashboard" | "Orders" | "Addresses"
-  >("Dashboard");
+  // const [selected, setSelected] = useState<
+  //   "Dashboard" | "Orders" | "Addresses"
+  // >("Dashboard");
+
+  const [selected, setSelected] = useState<"Dashboard" | "Orders">("Dashboard");
 
   const [user, setUser] = useState<UserData | null>(null);
 
@@ -98,12 +100,14 @@ export default function Dashboard() {
         </View>
 
         <View style={styles.tabContainer}>
-          {["Dashboard", "Orders", "Addresses"].map((tab) => (
+          {/* {["Dashboard", "Orders", "Addresses"].map((tab) => ( */}
+          {["Dashboard", "Orders"].map((tab) => (
             <TouchableOpacity
               key={tab}
               style={[styles.tabButton, selected === tab && styles.activeTab]}
               onPress={() =>
-                setSelected(tab as "Dashboard" | "Orders" | "Addresses")
+                // setSelected(tab as "Dashboard" | "Orders" | "Addresses")
+                setSelected(tab as "Dashboard" | "Orders")
               }
             >
               <Ionicons
@@ -139,11 +143,11 @@ export default function Dashboard() {
               <OrdersView />
             </View>
           )}
-          {selected === "Addresses" && (
+          {/* {selected === "Addresses" && (
             <View style={{ flex: 1, paddingLeft: 20, paddingRight: 20 }}>
               <AddressesView />
             </View>
-          )}
+          )} */}
         </View>
       </ScrollView>
     </LinearGradient>
