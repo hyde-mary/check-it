@@ -139,6 +139,9 @@ model Order {
   paymentId     Int
   orderItems    OrderItem[]
   status        OrderStatus   @default(Pending)
+  subtotal      Decimal       @db.Decimal(10,2) @default(0.00) // subtotal = total price before fees
+  fees          Decimal       @db.Decimal(10,2) @default(0.00) // fees
+  totalPrice    Decimal       @db.Decimal(10,2) @default(0.00) // total = subtotal + fees
 }
 
 model PaymentOption {

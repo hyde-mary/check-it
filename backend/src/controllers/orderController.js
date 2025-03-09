@@ -28,7 +28,8 @@ const userOrders = async (req, res) => {
 
 const orderFood = async (req, res) => {
   try {
-    const { userId, foodItems, selectedPayment } = req.body;
+    const { userId, foodItems, selectedPayment, subtotal, fees, totalPrice } =
+      req.body;
 
     if (!userId || !Array.isArray(foodItems) || foodItems.length === 0) {
       return res.status(400).json({ error: "Invalid input data" });
@@ -94,6 +95,9 @@ const orderFood = async (req, res) => {
         restaurantId: food.restaurantId,
         paymentId: paymentMethod.paymentId,
         status: "Pending",
+        subtotal,
+        fees,
+        totalPrice,
       },
     });
 
@@ -107,9 +111,12 @@ const orderFood = async (req, res) => {
 
     res.status(201).json({
       message: "Order placed successfully",
-      orderId: order.orderId,
+      orderId: order.id,
       paymentId: paymentMethod.paymentId,
       paymentType: paymentMethod.type,
+      subtotal: order.subtotal,
+      fees: order.fees,
+      totalPrice: order.totalPrice,
     });
   } catch (error) {
     console.error(error);
@@ -134,4 +141,41 @@ const pending = async (req, res) => {
   }
 };
 
-module.exports = { orderFood, userOrders, pending };
+const receive = async (req, res) => {
+  const { orderId } = req.body;
+
+  try {
+    if (!orderId) {
+      return res.status(400).json({ error: "Order ID is required" });
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { orderId },
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    if (order.status !== "Pending") {
+      return res
+        .status(400)
+        .json({ error: "Only pending orders can be marked as received" });
+    }
+
+    const updatedOrder = await prisma.order.update({
+      where: { orderId },
+      data: { status: "Delivered" },
+    });
+
+    res.json({
+      message: "Order marked as received successfully",
+      order: updatedOrder,
+    });
+  } catch (error) {
+    console.error("Error marking pending orders as received:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = { orderFood, userOrders, pending, receive };

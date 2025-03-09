@@ -24,7 +24,7 @@ import {
   BottomSheetModalProvider,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import { FlatList, GestureHandlerRootView } from "react-native-gesture-handler";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import getImageSrc from "@/utils/getImageSrc";
 // import { getUserInfo } from "@/utils/sessionManager";
 
@@ -44,6 +44,9 @@ type OrderItem = {
 type OrderWithItems = Order & {
   restaurant: Restaurant;
   orderItems: OrderItem[];
+  subtotal: number;
+  fees: number;
+  totalPrice: number;
 };
 
 export default function Page() {
@@ -53,6 +56,7 @@ export default function Page() {
     null
   );
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+  const [receiveLoading, setReceiveLoading] = useState<boolean>(false);
 
   useEffect(() => {
     fetchAllRestaurant();
@@ -142,13 +146,28 @@ export default function Page() {
     })}`;
   };
 
-  const handleMarkReceived = (orderId: number) => {
-    console.log(orderId);
+  const handleMarkReceived = async (orderId: number) => {
+    try {
+      setReceiveLoading(true);
+      const response = await fetch("http://10.0.2.2:3000/order/receive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId }),
+      });
+
+      if (!response.ok) throw new Error("Error fetching pending orders");
+
+      const receive = await response.json();
+
+      console.log(receive);
+    } catch (error) {
+      console.error("Error fetching pending orders:", error);
+    } finally {
+      setReceiveLoading(false);
+    }
   };
 
   if (!categories || !restaurants) return <DotsLoader />;
-
-  console.log(pendingOrders);
 
   return (
     <GestureHandlerRootView style={styles.container}>
@@ -216,8 +235,12 @@ export default function Page() {
                     </View>
 
                     <TouchableOpacity
-                      style={styles.receivedButton}
+                      style={[
+                        styles.receivedButton,
+                        receiveLoading && styles.receivedButtonDisabled,
+                      ]}
                       onPress={() => handleMarkReceived(order.orderId)}
+                      disabled={receiveLoading}
                     >
                       <Text style={styles.receivedButtonText}>
                         Mark as Received
@@ -239,7 +262,9 @@ export default function Page() {
                             {orderItem.food.name}
                           </Text>
                           <Text style={styles.foodPrice}>
-                            {formatCurrency(orderItem.food.price)}
+                            {formatCurrency(
+                              orderItem.food.price * orderItem.quantity
+                            )}
                           </Text>
                         </View>
                         <Text style={styles.quantity}>
@@ -248,6 +273,29 @@ export default function Page() {
                       </View>
                     ))}
                   </ScrollView>
+
+                  <View style={styles.priceBreakdown}>
+                    <View style={styles.priceRow}>
+                      <Text style={styles.priceLabel}>Subtotal:</Text>
+                      <Text style={styles.priceValue}>
+                        {formatCurrency(order.subtotal)}
+                      </Text>
+                    </View>
+                    <View style={styles.priceRow}>
+                      <Text style={styles.priceLabel}>Fees:</Text>
+                      <Text style={styles.priceValue}>
+                        {formatCurrency(order.fees)}
+                      </Text>
+                    </View>
+                    <View style={[styles.priceRow, styles.totalRow]}>
+                      <Text style={[styles.priceLabel, styles.totalLabel]}>
+                        Total:
+                      </Text>
+                      <Text style={[styles.priceValue, styles.totalPrice]}>
+                        {formatCurrency(order.totalPrice)}
+                      </Text>
+                    </View>
+                  </View>
 
                   <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>Estimated arrival:</Text>
@@ -444,5 +492,42 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 12,
     fontWeight: "500",
+  },
+  priceBreakdown: {
+    marginTop: 20,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: Colors.lightGrey,
+  },
+  priceRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  totalRow: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: Colors.lightGrey,
+  },
+  priceLabel: {
+    color: Colors.medium,
+    fontSize: 14,
+  },
+  priceValue: {
+    color: Colors.mediumDark,
+    fontSize: 14,
+  },
+  totalLabel: {
+    fontWeight: "600",
+  },
+  totalPrice: {
+    color: Colors.primary,
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  receivedButtonDisabled: {
+    backgroundColor: "#A9A9A9",
+    opacity: 0.6,
   },
 });

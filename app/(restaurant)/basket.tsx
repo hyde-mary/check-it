@@ -35,9 +35,9 @@ const Basket = () => {
     "cash"
   );
 
-  const FEES = {
-    service: 2.99,
-    delivery: 5.99,
+  const fees = {
+    service: 20, // 20 pesos ig
+    delivery: 60, // 60 pesos ig
   };
 
   const formatCurrency = (value: number) =>
@@ -45,7 +45,7 @@ const Basket = () => {
 
   const calculateTotal = () => {
     const subtotal = isNaN(total) ? 0 : total;
-    return subtotal + FEES.service + FEES.delivery;
+    return subtotal + fees.service + fees.delivery;
   };
 
   const handleCheckout = async () => {
@@ -53,16 +53,22 @@ const Basket = () => {
       setIsCheckingOut(true);
 
       const userInfo = await getUserInfo();
-
       if (!userInfo) {
         console.error("User not found");
         setIsCheckingOut(false);
         return;
       }
 
-      if (!foods) {
+      if (!foods || foods.length === 0) {
         throw new Error("No food detected!");
       }
+
+      const subtotal = foods.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+      );
+
+      const totalPrice = subtotal + fees.service + fees.delivery;
 
       const foodItems = foods.map((item) => ({
         foodId: item.id,
@@ -78,6 +84,9 @@ const Basket = () => {
           userId: userInfo.id,
           foodItems,
           selectedPayment,
+          subtotal,
+          fees,
+          totalPrice,
         }),
       });
 
@@ -173,8 +182,8 @@ const Basket = () => {
             ListFooterComponent={
               <View style={styles.summaryContainer}>
                 <FeeRow label="Subtotal" value={total} />
-                <FeeRow label="Service Fee" value={FEES.service} />
-                <FeeRow label="Delivery Fee" value={FEES.delivery} />
+                <FeeRow label="Service Fee" value={fees.service} />
+                <FeeRow label="Delivery Fee" value={fees.delivery} />
                 <View style={styles.totalRow}>
                   <Text style={styles.totalLabel}>Order Total</Text>
                   <Text style={styles.totalValue}>
