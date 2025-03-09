@@ -26,6 +26,7 @@ import {
 } from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import getImageSrc from "@/utils/getImageSrc";
+import Toast from "react-native-toast-message";
 // import { getUserInfo } from "@/utils/sessionManager";
 
 type Food = {
@@ -157,9 +158,23 @@ export default function Page() {
 
       if (!response.ok) throw new Error("Error fetching pending orders");
 
-      const receive = await response.json();
+      setPendingOrders((prevOrders) =>
+        prevOrders
+          ? prevOrders.filter((order) => order.orderId !== orderId)
+          : []
+      );
 
-      console.log(receive);
+      await fetchPendingOrders();
+
+      Toast.show({
+        type: "success",
+        text1: "Order Received",
+        text2: "Your order has been marked as received!",
+        position: "top",
+        visibilityTime: 3000,
+      });
+
+      bottomSheetModalRef.current?.dismiss();
     } catch (error) {
       console.error("Error fetching pending orders:", error);
     } finally {
@@ -170,152 +185,144 @@ export default function Page() {
   if (!categories || !restaurants) return <DotsLoader />;
 
   return (
-    <GestureHandlerRootView style={styles.container}>
-      <BottomSheetModalProvider>
-        <SafeAreaView style={styles.container}>
-          <ScrollView
-            contentContainerStyle={{
-              paddingTop: 20,
-              paddingBottom: pendingOrders?.length ? 125 : 40,
-            }}
-          >
-            <Categories categories={categories} />
-            <Text style={styles.header}>Top Picks in your Neighbourhood</Text>
-            <RestaurantsPicks restaurants={restaurants} />
-            <Text style={styles.header}>
-              Offers near you (Top 3 Based on Distance)
-            </Text>
-            <RestaurantsNear restaurants={restaurants} />
-          </ScrollView>
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        contentContainerStyle={{
+          paddingTop: 20,
+          paddingBottom: pendingOrders?.length ? 125 : 40,
+        }}
+      >
+        <Categories categories={categories} />
+        <Text style={styles.header}>Top Picks in your Neighbourhood</Text>
+        <RestaurantsPicks restaurants={restaurants} />
+        <Text style={styles.header}>
+          Offers near you (Top 3 Based on Distance)
+        </Text>
+        <RestaurantsNear restaurants={restaurants} />
+      </ScrollView>
 
-          {pendingOrders && pendingOrders.length > 0 && (
-            <TouchableOpacity onPress={handlePresentModalPress}>
-              <View style={styles.pendingOrderContainer}>
-                <Text style={styles.pendingOrderHeader}>Ongoing Order</Text>
-                <Text style={styles.restaurantName}>
-                  {pendingOrders[0].restaurant.name}
-                </Text>
-                <View style={styles.orderDetails}>
-                  <Text style={styles.detailText}>
-                    Ordered:{" "}
-                    {new Date(pendingOrders[0].orderTime).toLocaleTimeString()}
+      {pendingOrders && pendingOrders.length > 0 && (
+        <TouchableOpacity onPress={handlePresentModalPress}>
+          <View style={styles.pendingOrderContainer}>
+            <Text style={styles.pendingOrderHeader}>Ongoing Order</Text>
+            <Text style={styles.restaurantName}>
+              {pendingOrders[0].restaurant.name}
+            </Text>
+            <View style={styles.orderDetails}>
+              <Text style={styles.detailText}>
+                Ordered:{" "}
+                {new Date(pendingOrders[0].orderTime).toLocaleTimeString()}
+              </Text>
+              <Text style={styles.detailText}>
+                Estimated delivery: {pendingOrders[0].restaurant.deliveryTime}{" "}
+                mins
+              </Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+      )}
+
+      <BottomSheetModal
+        ref={bottomSheetModalRef}
+        index={2}
+        snapPoints={["40%", "90%"]}
+        backgroundStyle={styles.bottomSheet}
+        onChange={handleSheetChanges}
+      >
+        <BottomSheetView style={styles.sheetContent}>
+          {pendingOrders?.map((order) => (
+            <View key={order.orderId}>
+              {/* header part */}
+              <View style={styles.restaurantHeader}>
+                <Image
+                  source={getImageSrc(order.restaurant.img)}
+                  style={styles.restaurantImage}
+                />
+                <View style={styles.restaurantInfo}>
+                  <Text style={styles.sheetRestaurant}>
+                    {order.restaurant.name}
                   </Text>
-                  <Text style={styles.detailText}>
-                    Estimated delivery:{" "}
-                    {pendingOrders[0].restaurant.deliveryTime} mins
+                  <Text style={styles.deliveryTime}>
+                    {order.restaurant.deliveryTime} min delivery
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={[
+                    styles.receivedButton,
+                    receiveLoading && styles.receivedButtonDisabled,
+                  ]}
+                  onPress={() => handleMarkReceived(order.orderId)}
+                  disabled={receiveLoading}
+                >
+                  <Text style={styles.receivedButtonText}>
+                    Mark as Received
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* items part */}
+              <Text style={styles.itemsTitle}>Your Order</Text>
+              <ScrollView>
+                {order.orderItems.map((orderItem, index) => (
+                  <View key={index} style={styles.foodItem}>
+                    <Image
+                      source={getImageSrc(orderItem.food.img)}
+                      style={styles.foodImage}
+                    />
+                    <View style={styles.foodDetails}>
+                      <Text style={styles.foodName}>{orderItem.food.name}</Text>
+                      <Text style={styles.foodPrice}>
+                        {formatCurrency(
+                          orderItem.food.price * orderItem.quantity
+                        )}
+                      </Text>
+                    </View>
+                    <Text style={styles.quantity}>x{orderItem.quantity}</Text>
+                  </View>
+                ))}
+              </ScrollView>
+
+              <View style={styles.priceBreakdown}>
+                <View style={styles.priceRow}>
+                  <Text style={styles.priceLabel}>Subtotal:</Text>
+                  <Text style={styles.priceValue}>
+                    {formatCurrency(order.subtotal)}
+                  </Text>
+                </View>
+                <View style={styles.priceRow}>
+                  <Text style={styles.priceLabel}>Fees:</Text>
+                  <Text style={styles.priceValue}>
+                    {formatCurrency(order.fees)}
+                  </Text>
+                </View>
+                <View style={[styles.priceRow, styles.totalRow]}>
+                  <Text style={[styles.priceLabel, styles.totalLabel]}>
+                    Total:
+                  </Text>
+                  <Text style={[styles.priceValue, styles.totalPrice]}>
+                    {formatCurrency(order.totalPrice)}
                   </Text>
                 </View>
               </View>
-            </TouchableOpacity>
-          )}
 
-          <BottomSheetModal
-            ref={bottomSheetModalRef}
-            index={2}
-            snapPoints={["40%", "90%"]}
-            backgroundStyle={styles.bottomSheet}
-            onChange={handleSheetChanges}
-          >
-            <BottomSheetView style={styles.sheetContent}>
-              {pendingOrders?.map((order) => (
-                <View key={order.orderId}>
-                  {/* header part */}
-                  <View style={styles.restaurantHeader}>
-                    <Image
-                      source={getImageSrc(order.restaurant.img)}
-                      style={styles.restaurantImage}
-                    />
-                    <View style={styles.restaurantInfo}>
-                      <Text style={styles.sheetRestaurant}>
-                        {order.restaurant.name}
-                      </Text>
-                      <Text style={styles.deliveryTime}>
-                        {order.restaurant.deliveryTime} min delivery
-                      </Text>
-                    </View>
-
-                    <TouchableOpacity
-                      style={[
-                        styles.receivedButton,
-                        receiveLoading && styles.receivedButtonDisabled,
-                      ]}
-                      onPress={() => handleMarkReceived(order.orderId)}
-                      disabled={receiveLoading}
-                    >
-                      <Text style={styles.receivedButtonText}>
-                        Mark as Received
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* items part */}
-                  <Text style={styles.itemsTitle}>Your Order</Text>
-                  <ScrollView>
-                    {order.orderItems.map((orderItem, index) => (
-                      <View key={index} style={styles.foodItem}>
-                        <Image
-                          source={getImageSrc(orderItem.food.img)}
-                          style={styles.foodImage}
-                        />
-                        <View style={styles.foodDetails}>
-                          <Text style={styles.foodName}>
-                            {orderItem.food.name}
-                          </Text>
-                          <Text style={styles.foodPrice}>
-                            {formatCurrency(
-                              orderItem.food.price * orderItem.quantity
-                            )}
-                          </Text>
-                        </View>
-                        <Text style={styles.quantity}>
-                          x{orderItem.quantity}
-                        </Text>
-                      </View>
-                    ))}
-                  </ScrollView>
-
-                  <View style={styles.priceBreakdown}>
-                    <View style={styles.priceRow}>
-                      <Text style={styles.priceLabel}>Subtotal:</Text>
-                      <Text style={styles.priceValue}>
-                        {formatCurrency(order.subtotal)}
-                      </Text>
-                    </View>
-                    <View style={styles.priceRow}>
-                      <Text style={styles.priceLabel}>Fees:</Text>
-                      <Text style={styles.priceValue}>
-                        {formatCurrency(order.fees)}
-                      </Text>
-                    </View>
-                    <View style={[styles.priceRow, styles.totalRow]}>
-                      <Text style={[styles.priceLabel, styles.totalLabel]}>
-                        Total:
-                      </Text>
-                      <Text style={[styles.priceValue, styles.totalPrice]}>
-                        {formatCurrency(order.totalPrice)}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Estimated arrival:</Text>
-                    <Text style={styles.summaryValue}>
-                      {new Date(
-                        new Date(order.orderTime).getTime() +
-                          order.restaurant.deliveryTime * 60000
-                      ).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </Text>
-                  </View>
-                </View>
-              ))}
-            </BottomSheetView>
-          </BottomSheetModal>
-        </SafeAreaView>
-      </BottomSheetModalProvider>
-    </GestureHandlerRootView>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Estimated arrival:</Text>
+                <Text style={styles.summaryValue}>
+                  {new Date(
+                    new Date(order.orderTime).getTime() +
+                      order.restaurant.deliveryTime * 60000
+                  ).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </BottomSheetView>
+      </BottomSheetModal>
+    </SafeAreaView>
   );
 }
 

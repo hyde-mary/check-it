@@ -21,6 +21,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/Colors";
 
 import "react-native-get-random-values";
+import Toast from "react-native-toast-message";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -60,7 +61,10 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView>
-      <RootLayoutNav />
+      <BottomSheetModalProvider>
+        <RootLayoutNav />
+        <Toast />
+      </BottomSheetModalProvider>
     </GestureHandlerRootView>
   );
 }
@@ -94,96 +98,91 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <BottomSheetModalProvider>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="landing"
-            options={{ title: "Hello, Welcome to Check It" }}
-          />
-          <Stack.Screen
-            name="(auth)/register"
-            options={{ title: "Register" }}
-          />
-          <Stack.Screen name="(auth)/login" options={{ title: "Login" }} />
-          <Stack.Screen
-            name="(auth)/activity-level"
-            options={{ title: "Activity Level" }}
-          />
-          <Stack.Screen name="(auth)/user-goals" options={{ title: "Goals" }} />
-          <Stack.Screen
-            name="(modal)/location-search"
-            options={{
-              presentation: "fullScreenModal",
-              headerTitle: "Select location",
-              headerLeft: () => (
-                <TouchableOpacity
-                  onPress={() => {
-                    router.push("/");
-                  }}
-                >
-                  <Ionicons
-                    name="close-outline"
-                    size={28}
-                    color={Colors.primary}
-                  />
-                </TouchableOpacity>
-              ),
-            }}
-          />
-          <Stack.Screen
-            name="(modal)/filter"
-            options={{
-              presentation: "modal",
-              headerTitle: "Filter",
-              headerShadowVisible: false,
-              headerStyle: {
-                backgroundColor: Colors.lightGrey,
-              },
-              headerLeft: () => (
-                <TouchableOpacity
-                  onPress={() => {
-                    router.push("/");
-                  }}
-                >
-                  <Ionicons
-                    name="close-outline"
-                    size={28}
-                    color={Colors.primary}
-                  />
-                </TouchableOpacity>
-              ),
-            }}
-          />
-          <Stack.Screen
-            name="(modal)/dish"
-            options={{
-              presentation: "modal",
-              headerTitle: "",
-              headerTransparent: true,
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="landing"
+          options={{ title: "Hello, Welcome to Check It" }}
+        />
+        <Stack.Screen name="(auth)/register" options={{ title: "Register" }} />
+        <Stack.Screen name="(auth)/login" options={{ title: "Login" }} />
+        <Stack.Screen
+          name="(auth)/activity-level"
+          options={{ title: "Activity Level" }}
+        />
+        <Stack.Screen name="(auth)/user-goals" options={{ title: "Goals" }} />
+        <Stack.Screen
+          name="(modal)/location-search"
+          options={{
+            presentation: "fullScreenModal",
+            headerTitle: "Select location",
+            headerLeft: () => (
+              <TouchableOpacity
+                onPress={() => {
+                  router.push("/");
+                }}
+              >
+                <Ionicons
+                  name="close-outline"
+                  size={28}
+                  color={Colors.primary}
+                />
+              </TouchableOpacity>
+            ),
+          }}
+        />
+        <Stack.Screen
+          name="(modal)/filter"
+          options={{
+            presentation: "modal",
+            headerTitle: "Filter",
+            headerShadowVisible: false,
+            headerStyle: {
+              backgroundColor: Colors.lightGrey,
+            },
+            headerLeft: () => (
+              <TouchableOpacity
+                onPress={() => {
+                  router.push("/");
+                }}
+              >
+                <Ionicons
+                  name="close-outline"
+                  size={28}
+                  color={Colors.primary}
+                />
+              </TouchableOpacity>
+            ),
+          }}
+        />
+        <Stack.Screen
+          name="(modal)/dish"
+          options={{
+            presentation: "modal",
+            headerTitle: "",
+            headerTransparent: true,
 
-              headerLeft: () => (
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: "#fff",
-                    borderRadius: 20,
-                    padding: 6,
-                  }}
-                  onPress={() => {
-                    router.back();
-                  }}
-                >
-                  <Ionicons
-                    name="close-outline"
-                    size={28}
-                    color={Colors.primary}
-                  />
-                </TouchableOpacity>
-              ),
-            }}
-          />
-        </Stack>
-      </BottomSheetModalProvider>
+            headerLeft: () => (
+              <TouchableOpacity
+                style={{
+                  backgroundColor: "#fff",
+                  borderRadius: 20,
+                  padding: 6,
+                }}
+                onPress={() => {
+                  router.back();
+                }}
+              >
+                <Ionicons
+                  name="close-outline"
+                  size={28}
+                  color={Colors.primary}
+                />
+              </TouchableOpacity>
+            ),
+          }}
+        />
+      </Stack>
     </ThemeProvider>
   );
 }

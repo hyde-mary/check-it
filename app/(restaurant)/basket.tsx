@@ -85,7 +85,7 @@ const Basket = () => {
           foodItems,
           selectedPayment,
           subtotal,
-          fees,
+          fees: fees.delivery + fees.service,
           totalPrice,
         }),
       });

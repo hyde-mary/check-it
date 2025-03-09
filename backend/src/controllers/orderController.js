@@ -49,7 +49,6 @@ const orderFood = async (req, res) => {
 
     let paymentMethod;
 
-    console.log(selectedPayment);
     if (selectedPayment === "card") {
       const paymentOption = await prisma.paymentOption.findFirst({
         where: { userId },
