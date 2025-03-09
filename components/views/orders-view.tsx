@@ -36,6 +36,7 @@ const OrdersView = () => {
   }, []);
 
   const fetchOrders = async () => {
+    setLoading(true);
     try {
       const userId = await getUserInfo();
 
@@ -55,12 +56,7 @@ const OrdersView = () => {
 
       const data = await response.json();
 
-      if (data.orders && data.orders.length === 0) {
-        setUserOrders([]);
-        return;
-      }
-
-      setUserOrders(data.orders);
+      setUserOrders(data ?? []);
     } catch (error) {
       console.error("Error fetching orders:", error);
     } finally {

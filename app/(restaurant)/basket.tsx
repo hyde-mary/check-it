@@ -52,8 +52,8 @@ const Basket = () => {
     try {
       setIsCheckingOut(true);
 
-      const userInfo = await getUserInfo();
-      if (!userInfo) {
+      const userId = await getUserInfo();
+      if (!userId) {
         console.error("User not found");
         setIsCheckingOut(false);
         return;
@@ -81,7 +81,7 @@ const Basket = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: userInfo.id,
+          userId,
           foodItems,
           selectedPayment,
           subtotal,
