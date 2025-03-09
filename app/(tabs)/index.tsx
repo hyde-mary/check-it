@@ -171,7 +171,7 @@ export default function Page() {
         type: "success",
         text1: "Order Received",
         text2: "Your order has been marked as received!",
-        position: "top",
+        position: "bottom",
         visibilityTime: 2000,
       });
 

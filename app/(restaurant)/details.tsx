@@ -83,7 +83,7 @@ const Details = () => {
       headerTintColor: Colors.primary,
       headerLeft: () => (
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={() => router.replace("/")}
           style={styles.roundButton}
         >
           <Ionicons name="arrow-back" size={24} color={Colors.primary} />

@@ -152,7 +152,7 @@ const register = async (req, res) => {
     });
 
     const token = jwt.sign({ userId: newUser.id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
+      expiresIn: "1d",
     });
 
     res.status(201).json({
@@ -180,8 +180,16 @@ const login = async (req, res) => {
       return res.status(400).json({ error: "Invalid email or password" });
     }
 
+    const { caloricIntake, protein, carbs, fat } = calculateCaloricIntake(user);
+
+    await prisma.userCaloricIntake.upsert({
+      where: { userId: user.id },
+      update: { caloricIntake, protein, carbs, fat },
+      create: { userId: user.id, caloricIntake, protein, carbs, fat },
+    });
+
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
+      expiresIn: "1d",
     });
 
     res.json({ message: "Login successful", token, userId: user.id });

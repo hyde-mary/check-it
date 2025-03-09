@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import React from "react";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import getImageSrc from "@/utils/getImageSrc";
 import Colors from "@/constants/Colors";
 import { Restaurant } from "@prisma/client";
@@ -42,37 +42,31 @@ const RestaurantsPicks = ({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{
-        padding: 15,
-      }}
+      contentContainerStyle={{ padding: 15 }}
     >
       {sortedRestaurants.map((restaurant) => (
-        <Link
-          href={{
-            pathname: "/details",
-            params: { restaurantId: restaurant.id },
-          }}
+        <TouchableOpacity
           key={restaurant.id}
-          asChild
+          onPress={() =>
+            router.replace({
+              pathname: "/details",
+              params: { restaurantId: restaurant.id },
+            })
+          }
         >
-          <TouchableOpacity>
-            <View style={styles.categoryCard}>
-              <Image
-                source={getImageSrc(restaurant.img)}
-                style={styles.image}
-              />
-              <View style={styles.categoryBox}>
-                <Text style={styles.categoryText}>{restaurant.name}</Text>
-                <Text style={{ color: Colors.green }}>
-                  {restaurant.rating} ({restaurant.ratingsCount})
-                </Text>
-                <Text style={{ color: Colors.medium }}>
-                  {restaurant.distance}
-                </Text>
-              </View>
+          <View style={styles.categoryCard}>
+            <Image source={getImageSrc(restaurant.img)} style={styles.image} />
+            <View style={styles.categoryBox}>
+              <Text style={styles.categoryText}>{restaurant.name}</Text>
+              <Text style={{ color: Colors.green }}>
+                {restaurant.rating} ({restaurant.ratingsCount})
+              </Text>
+              <Text style={{ color: Colors.medium }}>
+                {restaurant.distance}
+              </Text>
             </View>
-          </TouchableOpacity>
-        </Link>
+          </View>
+        </TouchableOpacity>
       ))}
     </ScrollView>
   );

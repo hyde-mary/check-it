@@ -119,7 +119,7 @@ function RootLayoutNav() {
             headerLeft: () => (
               <TouchableOpacity
                 onPress={() => {
-                  router.push("/");
+                  router.replace("/");
                 }}
               >
                 <Ionicons
@@ -143,7 +143,7 @@ function RootLayoutNav() {
             headerLeft: () => (
               <TouchableOpacity
                 onPress={() => {
-                  router.push("/");
+                  router.replace("/");
                 }}
               >
                 <Ionicons

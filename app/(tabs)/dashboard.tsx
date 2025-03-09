@@ -78,7 +78,7 @@ export default function Dashboard() {
           >
             <TouchableOpacity
               style={styles.profileHeader}
-              onPress={() => router.push("/profile")}
+              onPress={() => router.replace("/profile")}
             >
               <Ionicons name="person-circle" size={40} color="white" />
               <View style={styles.profileTextContainer}>
