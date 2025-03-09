@@ -117,4 +117,21 @@ const orderFood = async (req, res) => {
   }
 };
 
-module.exports = { orderFood, userOrders };
+const pending = async (req, res) => {
+  const { userId } = req.body;
+
+  try {
+    const pendingOrders = await prisma.order.findMany({
+      where: { userId, status: "Pending" },
+      orderBy: { orderTime: "desc" },
+      include: { restaurant: true, orderItems: { include: { food: true } } },
+    });
+
+    res.json(pendingOrders);
+  } catch (error) {
+    console.error("Error fetching pending orders:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = { orderFood, userOrders, pending };
