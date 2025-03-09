@@ -13,6 +13,7 @@ const userOrders = async (req, res) => {
     const orders = await prisma.order.findMany({
       where: { userId: Number(userId) },
       orderBy: { orderTime: "desc" },
+      include: { restaurant: true },
     });
 
     if (orders.length === 0) {
