@@ -22,6 +22,7 @@ import { router } from "expo-router";
 import {
   BottomSheetModal,
   BottomSheetModalProvider,
+  BottomSheetScrollView,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -229,7 +230,7 @@ export default function Page() {
         backgroundStyle={styles.bottomSheet}
         onChange={handleSheetChanges}
       >
-        <BottomSheetView style={styles.sheetContent}>
+        <BottomSheetScrollView style={styles.sheetContent}>
           {pendingOrders?.map((order) => (
             <View key={order.orderId}>
               {/* header part */}
@@ -320,7 +321,7 @@ export default function Page() {
               </View>
             </View>
           ))}
-        </BottomSheetView>
+        </BottomSheetScrollView>
       </BottomSheetModal>
     </SafeAreaView>
   );
@@ -475,9 +476,11 @@ const styles = StyleSheet.create({
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 20,
+    marginBottom: 20,
     paddingTop: 15,
+    paddingBottom: 15,
     borderTopWidth: 1,
+    borderBottomWidth: 1,
     borderTopColor: Colors.lightGrey,
   },
   summaryLabel: {
