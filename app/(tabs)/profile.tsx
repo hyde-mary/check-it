@@ -271,6 +271,56 @@ const Profile = () => {
             </View>
           </View>
 
+          <Text style={styles.sectionTitle}>Address Information</Text>
+
+          <View style={styles.inputContainer}>
+            <Ionicons name="home-outline" size={20} color="#ff6666" />
+            <TextInput
+              style={styles.input}
+              placeholder="Street Address"
+              placeholderTextColor="#6B7280"
+              // value={userData.street || ""}
+              onChangeText={(text) => handleChange("street", text)}
+            />
+          </View>
+
+          <View style={styles.metricRow}>
+            <View style={[styles.inputContainer, styles.measurementInput]}>
+              <Ionicons name="business-outline" size={20} color="#ff6666" />
+              <TextInput
+                style={styles.input}
+                placeholder="City"
+                placeholderTextColor="#6B7280"
+                // value={userData.city || ""}
+                onChangeText={(text) => handleChange("city", text)}
+              />
+            </View>
+
+            <View style={[styles.inputContainer, styles.measurementInput]}>
+              <Ionicons name="map-outline" size={20} color="#ff6666" />
+              <TextInput
+                style={styles.input}
+                placeholder="State"
+                placeholderTextColor="#6B7280"
+                // value={userData.state || ""}
+                onChangeText={(text) => handleChange("state", text)}
+              />
+            </View>
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Ionicons name="mail-outline" size={20} color="#ff6666" />
+            <TextInput
+              style={styles.input}
+              placeholder="ZIP Code"
+              placeholderTextColor="#6B7280"
+              // value={userData.zipCode || ""}
+              onChangeText={(text) => handleChange("zipCode", text)}
+              keyboardType="numeric"
+              maxLength={5}
+            />
+          </View>
+
           <TouchableOpacity
             style={styles.saveButton}
             onPress={handleSave}

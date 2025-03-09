@@ -57,6 +57,19 @@ model User {
   paymentMethods PaymentMethod[]
   paymentOptions PaymentOption[]
   orders         Order[]
+  address        Address?            @relation(name: "AddressToUser")
+}
+
+model Address {
+  id        Int    @id @default(autoincrement())
+  userId    Int    @unique
+  user      User   @relation(name: "AddressToUser", fields: [userId], references: [id], onDelete: Cascade)
+  street    String @db.VarChar(255)
+  city      String @db.VarChar(100)
+  state     String @db.VarChar(100)
+  zipCode   String @db.VarChar(20)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model UserCaloricIntake {
