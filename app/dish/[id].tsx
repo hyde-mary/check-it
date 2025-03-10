@@ -53,6 +53,7 @@ const Dish = () => {
       protein: food.protein,
       carbs: food.carbs,
       fat: food.fat,
+      restaurantId: food.restaurantId,
     });
 
     router.back();

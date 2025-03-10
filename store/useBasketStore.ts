@@ -10,6 +10,7 @@ export interface Food {
   protein: number;
   carbs: number;
   fat: number;
+  restaurantId: number;
 }
 
 export interface BasketState {
@@ -29,19 +30,18 @@ const useBasketStore = create<BasketState>((set) => ({
   total: 0,
 
   addFood: (food) => {
-    console.log("Adding food:", food);
-    console.log("Food ID type:", typeof food.id, "Value:", food.id);
-
-    if (!food.id || isNaN(food.id)) {
-      console.error("Invalid food ID detected! Skipping food addition:", food);
-      return;
-    }
-
     set((state) => {
+      if (state.foods.length > 0) {
+        const currentRestaurantId = state.foods[0].restaurantId;
+        if (food.restaurantId !== currentRestaurantId) {
+          alert("You can only order from one restaurant at a time.");
+          return state; // Don't modify state
+        }
+      }
+
       const existingFood = state.foods.find((f) => f.id === food.id);
 
       if (existingFood) {
-        console.log("Food already exists, increasing quantity");
         return {
           foods: state.foods.map((f) =>
             f.id === food.id ? { ...f, quantity: f.quantity + 1 } : f
@@ -50,7 +50,6 @@ const useBasketStore = create<BasketState>((set) => ({
           total: state.total + food.price,
         };
       } else {
-        console.log("New food, adding to cart");
         return {
           foods: [...state.foods, { ...food, quantity: 1 }],
           items: state.items + 1,
