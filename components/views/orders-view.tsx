@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Image,
   RefreshControl,
+  ScrollView,
 } from "react-native";
 import { Order, User } from "@prisma/client";
 import { DotsLoader } from "../Loading";
@@ -44,18 +45,19 @@ const OrdersView = () => {
         throw new Error("User Id is missing, something went wrong");
       }
 
-      const response = await fetch("http://10.0.2.2:3000/order/userOrders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
+      const response = await fetch(
+        `http://10.0.2.2:3000/api/orders/userOrders/${userId}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Error fetching orders");
       }
 
       const data = await response.json();
-
       setUserOrders(data ?? []);
     } catch (error) {
       console.error("Error fetching orders:", error);
@@ -101,7 +103,7 @@ const OrdersView = () => {
     <View style={styles.container}>
       <Text style={styles.header}>Order History</Text>
 
-      {userOrders.length === 0 ? (
+      {(userOrders?.length ?? 0) === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons
             name="receipt-outline"
@@ -115,61 +117,74 @@ const OrdersView = () => {
           </Text>
         </View>
       ) : (
-        userOrders.map((item) => (
-          <View key={item.orderId} style={styles.orderCard}>
-            {/* header */}
-            <View style={styles.restaurantHeader}>
-              <Image
-                source={getImageSrc(item.restaurant.img)}
-                style={styles.restaurantImage}
-              />
-              <View style={styles.restaurantInfo}>
-                <Text style={styles.restaurantName}>
-                  {item.restaurant.name}
-                </Text>
-                <Text style={styles.deliveryTime}>
-                  {item.restaurant.deliveryTime} min delivery
-                </Text>
+        <ScrollView
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[Colors.primary]}
+            />
+          }
+        >
+          {(userOrders ?? []).map((item) => (
+            <View key={item.orderId} style={styles.orderCard}>
+              {/* header */}
+              <View style={styles.restaurantHeader}>
+                <Image
+                  source={getImageSrc(item.restaurant.img)}
+                  style={styles.restaurantImage}
+                />
+                <View style={styles.restaurantInfo}>
+                  <Text style={styles.restaurantName}>
+                    {item.restaurant.name}
+                  </Text>
+                  <Text style={styles.deliveryTime}>
+                    {item.restaurant.deliveryTime} min delivery
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    { backgroundColor: getStatusColor(item.status) },
+                  ]}
+                >
+                  <Text style={styles.statusText}>{item.status}</Text>
+                </View>
               </View>
-              <View
-                style={[
-                  styles.statusBadge,
-                  { backgroundColor: getStatusColor(item.status) },
-                ]}
-              >
-                <Text style={styles.statusText}>{item.status}</Text>
+
+              {/* details */}
+              <View style={styles.detailsContainer}>
+                <Text style={styles.orderDate}>
+                  {formatDate(item.orderTime)}
+                </Text>
+
+                <View style={styles.priceRow}>
+                  <Text style={styles.priceLabel}>Subtotal:</Text>
+                  <Text style={styles.priceValue}>
+                    {formatCurrency(item.subtotal)}
+                  </Text>
+                </View>
+
+                <View style={styles.priceRow}>
+                  <Text style={styles.priceLabel}>Fees:</Text>
+                  <Text style={styles.priceValue}>
+                    {formatCurrency(item.fees)}
+                  </Text>
+                </View>
+
+                <View style={[styles.priceRow, styles.totalRow]}>
+                  <Text style={[styles.priceLabel, styles.totalLabel]}>
+                    Total:
+                  </Text>
+                  <Text style={[styles.priceValue, styles.totalPrice]}>
+                    {formatCurrency(item.totalPrice)}
+                  </Text>
+                </View>
               </View>
             </View>
-
-            {/* details */}
-            <View style={styles.detailsContainer}>
-              <Text style={styles.orderDate}>{formatDate(item.orderTime)}</Text>
-
-              <View style={styles.priceRow}>
-                <Text style={styles.priceLabel}>Subtotal:</Text>
-                <Text style={styles.priceValue}>
-                  {formatCurrency(item.subtotal)}
-                </Text>
-              </View>
-
-              <View style={styles.priceRow}>
-                <Text style={styles.priceLabel}>Fees:</Text>
-                <Text style={styles.priceValue}>
-                  {formatCurrency(item.fees)}
-                </Text>
-              </View>
-
-              <View style={[styles.priceRow, styles.totalRow]}>
-                <Text style={[styles.priceLabel, styles.totalLabel]}>
-                  Total:
-                </Text>
-                <Text style={[styles.priceValue, styles.totalPrice]}>
-                  {formatCurrency(item.totalPrice)}
-                </Text>
-              </View>
-            </View>
-          </View>
-        ))
+          ))}
+        </ScrollView>
       )}
     </View>
   );

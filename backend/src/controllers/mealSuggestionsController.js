@@ -1,52 +1,45 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 require("dotenv").config();
 
-const getMeal = async (req, res) => {
+const getMealSuggestions = async (req, res) => {
   try {
+    const userId = req.query.userId;
+    if (!userId) return res.status(400).json({ error: "User ID is required" });
+
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({
       model: "gemini-1.5-flash-latest",
     });
 
+    console.log(userId);
+
     let foods = null;
     let calories = null;
 
+    // Fetch foods
     try {
-      const responseFoods = await fetch("http://localhost:3000/foods/");
-      if (!responseFoods.ok) {
-        throw new Error(
-          `Error fetching foods! Status: ${responseFoods.status}`
-        );
-      }
+      const responseFoods = await fetch("http://localhost:3000/api/foods/");
+      if (!responseFoods.ok)
+        throw new Error(`Error fetching foods: ${responseFoods.status}`);
       foods = await responseFoods.json();
-
-      const responseCalories = await fetch(
-        "http://localhost:3000/calories/userCalories",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: req.body.userId }),
-        }
-      );
-
-      if (!responseCalories.ok) {
-        throw new Error(
-          `Error fetching userCalories! Status: ${responseCalories.status}`
-        );
-      }
-      calories = await responseCalories.json();
-
-      if (!foods || foods.length === 0) {
-        throw new Error(`Foods data is empty.`);
-      }
-      if (!calories) {
-        throw new Error(`User calorie data is missing.`);
-      }
+      if (!foods.length) throw new Error("No available foods.");
     } catch (error) {
-      console.error("Failed to fetch data:", error);
-      return res
-        .status(500)
-        .json({ error: "Meal suggestion service unavailable." });
+      return res.status(500).json({ error: "Failed to fetch foods." });
+    }
+
+    // Fetch user calories
+    try {
+      const responseCalories = await fetch(
+        `http://localhost:3000/api/user-calories/${userId}`
+      );
+      if (!responseCalories.ok)
+        throw new Error(
+          `Error fetching userCalories: ${responseCalories.status}`
+        );
+      calories = await responseCalories.json();
+      if (!calories) throw new Error("User calorie data missing.");
+    } catch (error) {
+      return res.status(500).json({ error: "Failed to fetch user calories." });
     }
 
     const prompt = `You are an AI bot that recommends meals based on a user's macronutrient goals.
@@ -94,4 +87,4 @@ const getMeal = async (req, res) => {
   }
 };
 
-module.exports = { getMeal };
+module.exports = { getMealSuggestions };

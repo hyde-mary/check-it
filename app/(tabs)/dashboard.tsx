@@ -50,11 +50,9 @@ export default function Dashboard() {
         throw new Error("Missing user info");
       }
 
-      const response = await fetch("http://10.0.2.2:3000/user/getUserById", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
+      const response = await fetch(
+        `http://10.0.2.2:3000/api/users/user/${userId}`
+      );
 
       if (!response) {
         throw new Error("Error fetching user from API");

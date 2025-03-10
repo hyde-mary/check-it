@@ -1,7 +1,7 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-const getAllRestaurant = async (req, res) => {
+const getRestaurants = async (req, res) => {
   try {
     const restaurants = await prisma.restaurant.findMany();
     res.json(restaurants);
@@ -13,24 +13,21 @@ const getAllRestaurant = async (req, res) => {
 
 const getRestaurantFromId = async (req, res) => {
   try {
-    const { id } = req.body;
+    const { id } = req.params;
+    const restaurantId = Number(id);
 
-    if (!id) {
-      return res
-        .status(400)
-        .json({ error: "Request denied, no restaurant ID" });
+    if (isNaN(restaurantId)) {
+      return res.status(400).json({ error: "Invalid restaurant ID." });
     }
 
     const restaurant = await prisma.restaurant.findFirst({
-      where: {
-        id,
-      },
+      where: { id: restaurantId },
     });
 
     if (!restaurant) {
       return res
-        .status(400)
-        .json({ error: "Request denied, no restaurant that matches that ID" });
+        .status(404)
+        .json({ error: "No restaurant found with the given ID." });
     }
 
     res.json(restaurant);
@@ -40,4 +37,4 @@ const getRestaurantFromId = async (req, res) => {
   }
 };
 
-module.exports = { getAllRestaurant, getRestaurantFromId };
+module.exports = { getRestaurants, getRestaurantFromId };

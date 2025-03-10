@@ -49,11 +49,9 @@ const Profile = () => {
         throw new Error("Missing user info");
       }
 
-      const response = await fetch("http://10.0.2.2:3000/user/getUserById", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
+      const response = await fetch(
+        `http://10.0.2.2:3000/api/users/user/${userId}`
+      );
 
       if (!response) {
         throw new Error("Error fetching user from API");
@@ -64,7 +62,7 @@ const Profile = () => {
 
       setUser(user);
     } catch (error) {
-      console.error("Error fetching user info");
+      console.error("Error fetching user info", error);
     }
   };
 
@@ -116,13 +114,18 @@ const Profile = () => {
     try {
       setLoading(true);
 
-      const response = await fetch("http://10.0.2.2:3000/user/update", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ user }),
-      });
+      const userId = await getUserInfo();
+
+      const response = await fetch(
+        `http://10.0.2.2:3000/api/users/user/${userId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(user),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Response not ok");

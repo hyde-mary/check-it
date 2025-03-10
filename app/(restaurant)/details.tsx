@@ -50,12 +50,12 @@ const Details = () => {
 
   const fetchRestaurant = async () => {
     try {
-      const response = await fetch("http://10.0.2.2:3000/restaurant/id", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: Number(restaurantId) }),
-      });
+      const response = await fetch(
+        `http://10.0.2.2:3000/api/restaurants/${restaurantId}`
+      );
+
       if (!response.ok) throw new Error("Response not OK");
+
       setRestaurantData(await response.json());
     } catch (error) {
       console.error("Error fetching restaurant data.", error);
@@ -64,12 +64,12 @@ const Details = () => {
 
   const fetchRestaurantFood = async () => {
     try {
-      const response = await fetch("http://10.0.2.2:3000/foods/restaurant", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ restaurantId: Number(restaurantId) }),
-      });
+      const response = await fetch(
+        `http://10.0.2.2:3000/api/foods/restaurant/${restaurantId}`
+      );
+
       if (!response.ok) throw new Error("Response not OK");
+
       setFoodData(await response.json());
     } catch (error) {
       console.error("Error fetching food data.", error);

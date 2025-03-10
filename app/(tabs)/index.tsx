@@ -70,7 +70,7 @@ export default function Page() {
     // const userInfo = await getUserInfo();
     // console.log(userInfo);
     try {
-      const response = await fetch("http://10.0.2.2:3000/category/");
+      const response = await fetch("http://10.0.2.2:3000/api/categories/");
 
       if (!response) {
         throw new Error("Connection error");
@@ -93,7 +93,7 @@ export default function Page() {
 
   const fetchAllRestaurant = async () => {
     try {
-      const response = await fetch("http://10.0.2.2:3000/restaurant/");
+      const response = await fetch("http://10.0.2.2:3000/api/restaurants/");
 
       if (!response) {
         throw new Error("Connection error");
@@ -119,11 +119,9 @@ export default function Page() {
       const userId = await getUserInfo();
       if (!userId) return;
 
-      const response = await fetch("http://10.0.2.2:3000/order/pending", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
+      const response = await fetch(
+        `http://10.0.2.2:3000/api/orders/pending/${userId}`
+      );
 
       if (!response.ok) throw new Error("Error fetching pending orders");
 
@@ -151,13 +149,14 @@ export default function Page() {
   const handleMarkReceived = async (orderId: number) => {
     try {
       setReceiveLoading(true);
-      const response = await fetch("http://10.0.2.2:3000/order/receive", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId }),
-      });
+      const response = await fetch(
+        `http://10.0.2.2:3000/api/orders/receive/${orderId}`,
+        {
+          method: "PUT",
+        }
+      );
 
-      if (!response.ok) throw new Error("Error fetching pending orders");
+      if (!response.ok) throw new Error("Error marking order as received");
 
       setPendingOrders((prevOrders) =>
         prevOrders
@@ -177,7 +176,7 @@ export default function Page() {
 
       bottomSheetModalRef.current?.dismiss();
     } catch (error) {
-      console.error("Error fetching pending orders:", error);
+      console.error("Error marking order as received:", error);
     } finally {
       setReceiveLoading(false);
     }

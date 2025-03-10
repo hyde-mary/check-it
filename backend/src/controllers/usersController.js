@@ -5,7 +5,7 @@ require("dotenv").config();
 
 const prisma = new PrismaClient();
 
-const getUser = async (req, res) => {
+const getUsers = async (req, res) => {
   try {
     const users = await prisma.user.findMany();
     res.json(users);
@@ -17,11 +17,11 @@ const getUser = async (req, res) => {
 
 const getUserById = async (req, res) => {
   try {
-    const { userId } = req.body;
+    const { id } = req.params;
 
     // haba pero just to exclude the password
     const user = await prisma.user.findUnique({
-      where: { id: Number(userId) },
+      where: { id: Number(id) },
       select: {
         id: true,
         firstName: true,
@@ -199,12 +199,15 @@ const login = async (req, res) => {
   }
 };
 
-const update = async (req, res) => {
+const updateUser = async (req, res) => {
   try {
-    const { user } = req.body;
+    const id = Number(req.params.id);
+
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid User ID." });
+    }
 
     const {
-      id,
       firstName,
       lastName,
       email,
@@ -214,7 +217,7 @@ const update = async (req, res) => {
       goals,
       paymentOption,
       address,
-    } = user;
+    } = req.body;
 
     if (!id) {
       return res.status(400).json({ error: "User ID is required." });
@@ -335,4 +338,4 @@ const update = async (req, res) => {
   }
 };
 
-module.exports = { getUser, register, login, update, getUserById };
+module.exports = { getUsers, register, login, updateUser, getUserById };

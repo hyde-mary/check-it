@@ -25,11 +25,9 @@ const Dish = () => {
         throw new Error("Invalid ID");
       }
 
-      const response = await fetch("http://10.0.2.2:3000/foods/getFoodById", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ foodId: Number(id) }),
-      });
+      const response = await fetch(
+        `http://10.0.2.2:3000/api/foods/getFoodById/${id}`
+      );
 
       if (!response.ok) {
         throw new Error("Error fetching from API");

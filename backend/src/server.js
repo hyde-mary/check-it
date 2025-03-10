@@ -1,24 +1,28 @@
 const express = require("express");
 const cors = require("cors");
-const userRoutes = require("./routes/userRoutes");
-const foodRoutes = require("./routes/foodRoutes");
+
+const usersRoutes = require("./routes/usersRoutes");
+const foodsRoutes = require("./routes/foodsRoutes");
 const userCaloriesRoutes = require("./routes/userCaloriesRoutes");
-const mealRoutes = require("./routes/mealRoutes");
-const restaurantRoutes = require("./routes/restaurantRoutes");
-const categoryRoutes = require("./routes/categoryRoutes");
-const orderRoutes = require("./routes/orderRoutes");
+const restaurantsRoutes = require("./routes/restaurantsRoutes");
+const categoriesRoutes = require("./routes/categoriesRoutes");
+const ordersRoutes = require("./routes/ordersRoutes");
+
+const mealSuggestionsRoutes = require("./routes/mealSuggestionsRoutes");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use("/user", userRoutes);
-app.use("/foods", foodRoutes);
-app.use("/calories", userCaloriesRoutes);
-app.use("/meal", mealRoutes);
-app.use("/restaurant", restaurantRoutes);
-app.use("/category", categoryRoutes);
-app.use("/order", orderRoutes);
+app.use("/api/users", usersRoutes);
+app.use("/api/foods", foodsRoutes);
+app.use("/api/user-calories", userCaloriesRoutes);
+app.use("/api/restaurants", restaurantsRoutes);
+app.use("/api/categories", categoriesRoutes);
+app.use("/api/orders", ordersRoutes);
+
+// ai meal suggestions
+app.use("/api/ai/meal-suggestions", mealSuggestionsRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

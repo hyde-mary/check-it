@@ -63,11 +63,9 @@ const Basket = () => {
         throw new Error("Missing user info");
       }
 
-      const response = await fetch("http://10.0.2.2:3000/user/getUserById", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
+      const response = await fetch(
+        `http://10.0.2.2:3000/api/users/user/${userId}`
+      );
 
       if (!response) {
         throw new Error("Error fetching user from API");
@@ -132,20 +130,23 @@ const Basket = () => {
         quantity: item.quantity,
       }));
 
-      const response = await fetch("http://10.0.2.2:3000/order/orderFood", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId,
-          foodItems,
-          selectedPayment,
-          subtotal,
-          fees: fees.delivery + fees.service,
-          totalPrice,
-        }),
-      });
+      const response = await fetch(
+        "http://10.0.2.2:3000/api/orders/orderFood",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId,
+            foodItems,
+            selectedPayment,
+            subtotal,
+            fees: fees.delivery + fees.service,
+            totalPrice,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Network Error");

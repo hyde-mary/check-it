@@ -57,7 +57,7 @@ export default function UserGoals() {
 
       const latestUserData = getUserData();
 
-      const response = await fetch("http://10.0.2.2:3000/user/register", {
+      const response = await fetch("http://10.0.2.2:3000/api/users/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

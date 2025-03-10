@@ -3,15 +3,19 @@ const prisma = new PrismaClient();
 
 const getUserCalories = async (req, res) => {
   try {
-    const { userId } = req.body;
+    const { id } = req.params;
 
-    if (!userId) {
-      return res.status(400).json({ error: "User ID is required" });
+    if (!id || isNaN(id)) {
+      return res.status(400).json({ error: "Valid User ID is required" });
     }
 
     const userCaloricIntake = await prisma.userCaloricIntake.findUnique({
-      where: { userId },
+      where: { userId: Number(id) },
     });
+
+    if (!userCaloricIntake) {
+      return res.status(404).json({ error: "Caloric intake not found" });
+    }
 
     res.json(userCaloricIntake);
   } catch (error) {

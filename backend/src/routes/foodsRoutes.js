@@ -3,12 +3,12 @@ const {
   getFoods,
   getFoodFromRestaurant,
   getFoodById,
-} = require("../controllers/foodController");
+} = require("../controllers/foodsController");
 
 const router = express.Router();
 
 router.get("/", getFoods);
-router.post("/restaurant", getFoodFromRestaurant);
-router.post("/getFoodById", getFoodById);
+router.get("/restaurant/:restaurantId", getFoodFromRestaurant);
+router.get("/getFoodById/:foodId", getFoodById);
 
 module.exports = router;

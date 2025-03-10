@@ -2,16 +2,16 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const { v4: uuidv4 } = require("uuid");
 
-const userOrders = async (req, res) => {
+const getUserOrders = async (req, res) => {
   try {
-    const { userId } = req.body;
+    const { userId } = req.params;
 
     if (!userId) {
       return res.status(400).json({ error: "User ID is required" });
     }
 
     const orders = await prisma.order.findMany({
-      where: { userId },
+      where: { userId: Number(userId) }, // Convert userId to a number
       orderBy: { orderTime: "desc" },
       include: { restaurant: true },
     });
@@ -126,12 +126,12 @@ const orderFood = async (req, res) => {
   }
 };
 
-const pending = async (req, res) => {
-  const { userId } = req.body;
+const getPendingOrders = async (req, res) => {
+  const { userId } = req.params;
 
   try {
     const pendingOrders = await prisma.order.findMany({
-      where: { userId, status: "Pending" },
+      where: { userId: Number(userId), status: "Pending" },
       orderBy: { orderTime: "desc" },
       include: { restaurant: true, orderItems: { include: { food: true } } },
     });
@@ -144,15 +144,15 @@ const pending = async (req, res) => {
 };
 
 const receive = async (req, res) => {
-  const { orderId } = req.body;
-
   try {
+    const { orderId } = req.params;
+
     if (!orderId) {
       return res.status(400).json({ error: "Order ID is required" });
     }
 
     const order = await prisma.order.findUnique({
-      where: { orderId },
+      where: { orderId: Number(orderId) },
       include: {
         orderItems: {
           include: {
@@ -204,7 +204,7 @@ const receive = async (req, res) => {
     });
 
     const updatedOrder = await prisma.order.update({
-      where: { orderId },
+      where: { orderId: Number(orderId) },
       data: { status: "Delivered" },
     });
 
@@ -214,9 +214,14 @@ const receive = async (req, res) => {
       updatedIntake,
     });
   } catch (error) {
-    console.error("Error marking pending orders as received:", error);
+    console.error("Error marking order as received:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-module.exports = { orderFood, userOrders, pending, receive };
+module.exports = {
+  orderFood,
+  getUserOrders,
+  getPendingOrders,
+  receive,
+};

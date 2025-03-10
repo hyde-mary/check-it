@@ -3,6 +3,6 @@ const { getUserCalories } = require("../controllers/userCaloriesController");
 
 const router = express.Router();
 
-router.post("/userCalories", getUserCalories);
+router.get("/:id", getUserCalories);
 
 module.exports = router;
