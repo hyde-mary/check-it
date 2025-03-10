@@ -1,7 +1,6 @@
 import {
   Button,
   Image,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Touchable,
@@ -18,7 +17,7 @@ import Categories from "@/components/index/Categories";
 import RestaurantsPicks from "@/components/index/RestaurantsPicks";
 import RestaurantsNear from "@/components/index/RestaurantsNear";
 import { getUserInfo } from "@/utils/sessionManager";
-import { router } from "expo-router";
+import { Link, router } from "expo-router";
 import {
   BottomSheetModal,
   BottomSheetModalProvider,
@@ -28,6 +27,8 @@ import {
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import getImageSrc from "@/utils/getImageSrc";
 import Toast from "react-native-toast-message";
+import useBasketStore from "@/store/useBasketStore";
+import { SafeAreaView } from "react-native-safe-area-context";
 // import { getUserInfo } from "@/utils/sessionManager";
 
 type Food = {
@@ -59,6 +60,7 @@ export default function Page() {
   );
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const [receiveLoading, setReceiveLoading] = useState<boolean>(false);
+  const { items, total } = useBasketStore();
 
   useEffect(() => {
     fetchAllRestaurant();
@@ -200,6 +202,20 @@ export default function Page() {
         </Text>
         <RestaurantsNear restaurants={restaurants} />
       </ScrollView>
+
+      {items > 0 && (
+        <View style={styles.footer}>
+          <SafeAreaView edges={["bottom"]} style={{ backgroundColor: "#fff" }}>
+            <Link href="/basket" asChild>
+              <TouchableOpacity style={styles.fullButton}>
+                <Text style={styles.basket}>{items}</Text>
+                <Text style={styles.footerText}>View Basket</Text>
+                <Text style={styles.basketTotal}>₱{total.toFixed(2)}</Text>
+              </TouchableOpacity>
+            </Link>
+          </SafeAreaView>
+        </View>
+      )}
 
       {pendingOrders && pendingOrders.length > 0 && (
         <TouchableOpacity onPress={handlePresentModalPress}>
@@ -538,5 +554,54 @@ const styles = StyleSheet.create({
   receivedButtonDisabled: {
     backgroundColor: "#A9A9A9",
     opacity: 0.6,
+  },
+  footer: {
+    position: "absolute",
+    backgroundColor: "#fff",
+    bottom: 0,
+    left: 0,
+    width: "100%",
+    padding: 16,
+    elevation: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  fullButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    height: 56,
+    gap: 8,
+  },
+  footerText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+    flex: 1,
+    marginLeft: 8,
+  },
+  basket: {
+    color: "#fff",
+    backgroundColor: "#19AA86",
+    fontWeight: "bold",
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 100,
+    fontSize: 14,
+    minWidth: 28,
+    textAlign: "center",
+  },
+  basketTotal: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+    marginRight: 4,
   },
 });
