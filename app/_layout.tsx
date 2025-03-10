@@ -155,6 +155,52 @@ function RootLayoutNav() {
             ),
           }}
         />
+        <Stack.Screen
+          name="dish/[id]"
+          options={{
+            headerTitle: "Food Details",
+            headerShadowVisible: false,
+            headerStyle: {
+              backgroundColor: Colors.lightGrey,
+            },
+            headerLeft: () => (
+              <TouchableOpacity
+                onPress={() => {
+                  router.back();
+                }}
+              >
+                <Ionicons
+                  name="close-outline"
+                  size={28}
+                  color={Colors.primary}
+                />
+              </TouchableOpacity>
+            ),
+          }}
+        />
+        <Stack.Screen
+          name="(restaurant)/basket"
+          options={{
+            headerTitle: "Basket",
+            headerShadowVisible: false,
+            headerStyle: {
+              backgroundColor: Colors.lightGrey,
+            },
+            headerLeft: () => (
+              <TouchableOpacity
+                onPress={() => {
+                  router.replace("/");
+                }}
+              >
+                <Ionicons
+                  name="close-outline"
+                  size={28}
+                  color={Colors.primary}
+                />
+              </TouchableOpacity>
+            ),
+          }}
+        />
       </Stack>
     </ThemeProvider>
   );

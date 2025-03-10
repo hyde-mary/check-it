@@ -56,10 +56,14 @@ const getMealSuggestions = async (req, res) => {
         {
           "suggestions": [
             {
+              "id": 10,
+              "restaurantId": 3
               "food_name": "Steak with Veggies",
               "reason": "This meal provides high protein while keeping fats and carbs moderate, aligning well with the user's goal."
             },
             {
+              "id": 19
+              "restaurantId: 4
               "food_name": "Lean Beef Rice Bowl",
               "reason": "Offers a balanced mix of protein and carbs, making it a good choice for post-workout recovery."
             }

@@ -19,6 +19,7 @@ import {
 import { DotsLoader } from "@/components/Loading";
 import { useFocusEffect } from "expo-router";
 import { useCallback } from "react";
+import { useRouter } from "expo-router";
 
 type UserData = Omit<User, "password"> & {
   paymentOption?: PaymentOption | null;
@@ -29,6 +30,7 @@ type UserData = Omit<User, "password"> & {
 export default function AiSuggestion() {
   const [user, setUser] = useState<UserData | null>(null);
   const [suggestion, setSuggestion] = useState<any>("");
+  const router = useRouter();
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
@@ -196,10 +198,24 @@ export default function AiSuggestion() {
             {suggestion && suggestion.suggestions ? (
               suggestion.suggestions.map(
                 (
-                  meal: { food_name: string; reason: string },
+                  meal: {
+                    food_name: string;
+                    reason: string;
+                    id: number;
+                    restaurantId: number;
+                  },
                   index: number
                 ) => (
-                  <View key={index} style={styles.mealItem}>
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.mealItem}
+                    onPress={() =>
+                      router.replace({
+                        pathname: "/details",
+                        params: { restaurantId: meal.restaurantId },
+                      })
+                    }
+                  >
                     <Ionicons
                       name="nutrition"
                       size={16}
@@ -214,7 +230,7 @@ export default function AiSuggestion() {
                       </Text>
                       <Text style={styles.reasonText}>{meal.reason}</Text>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 )
               )
             ) : (
