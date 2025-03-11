@@ -10,7 +10,7 @@
 
 ### 1. Clone the Repository
 ```sh
-git clone http://hyde-mary/check-it
+git clone https://github.com/hyde-mary/check-it.git
 cd check-it
 ```
 
