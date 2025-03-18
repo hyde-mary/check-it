@@ -62,4 +62,37 @@ const getFoodById = async (req, res) => {
   }
 };
 
-module.exports = { getFoods, getFoodFromRestaurant, getFoodById };
+const getFoodsByCategories = async (req, res) => {
+  try {
+    const { categoryIds } = req.params;
+
+    if (!categoryIds) {
+      return res.status(400).json({ error: "No categories provided!" });
+    }
+
+    const categoryArray = categoryIds.split(",").map(Number);
+
+    const foods = await prisma.food.findMany({
+      where: {
+        categoryId: {
+          in: categoryArray,
+        },
+      },
+      include: {
+        restaurant: true,
+      },
+    });
+
+    res.json(foods);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+module.exports = {
+  getFoods,
+  getFoodFromRestaurant,
+  getFoodById,
+  getFoodsByCategories,
+};

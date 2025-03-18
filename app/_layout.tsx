@@ -186,19 +186,16 @@ function RootLayoutNav() {
             headerStyle: {
               backgroundColor: Colors.lightGrey,
             },
-            headerLeft: () => (
-              <TouchableOpacity
-                onPress={() => {
-                  router.replace("/");
-                }}
-              >
-                <Ionicons
-                  name="close-outline"
-                  size={28}
-                  color={Colors.primary}
-                />
-              </TouchableOpacity>
-            ),
+          }}
+        />
+        <Stack.Screen
+          name="(filter)/filtered-foods"
+          options={{
+            headerTitle: "Filtered Foods",
+            headerShadowVisible: false,
+            headerStyle: {
+              backgroundColor: Colors.lightGrey,
+            },
           }}
         />
       </Stack>

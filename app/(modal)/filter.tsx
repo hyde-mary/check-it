@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import Colors from "../../constants/Colors";
-import { useNavigation } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import getImageSrc from "@/utils/getImageSrc";
@@ -165,7 +165,16 @@ const Filter = () => {
 
         <TouchableOpacity
           style={styles.doneButton}
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            const selectedCategoryIds = categories
+              .filter((item) => item.checked)
+              .map((item) => item.id)
+              .join(",");
+
+            router.push(
+              `/(filter)/filtered-foods?selectedCategoryIds=${selectedCategoryIds}`
+            );
+          }}
         >
           <Text style={styles.doneText}>Apply Filters</Text>
           <Ionicons name="checkmark-circle" size={20} color="white" />
