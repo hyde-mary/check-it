@@ -44,8 +44,60 @@ export default function Register() {
       return;
     }
 
+    if (password.length < 8) {
+      Alert.alert("Error", "Password must be at least 8 characters long.");
+      return;
+    }
+
     if (password !== confirmPassword) {
       Alert.alert("Error", "Passwords do not match.");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert("Error", "Please enter a valid email address.");
+      return;
+    }
+
+    const birthdayRegex = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+    if (!birthdayRegex.test(birthday)) {
+      Alert.alert("Error", "Birthday must be in YYYY-MM-DD format.");
+      return;
+    }
+
+    const [year, month, day] = birthday.split("-").map(Number);
+    const parsedDate = new Date(year, month - 1, day);
+
+    if (
+      parsedDate.getFullYear() !== year ||
+      parsedDate.getMonth() + 1 !== month || // JS Date months are 0-based
+      parsedDate.getDate() !== day
+    ) {
+      Alert.alert("Error", "Invalid date. Please enter a real birthday.");
+      return;
+    }
+
+    const heightNum = Number(height);
+    const weightNum = Number(weight);
+
+    if (
+      isNaN(heightNum) ||
+      isNaN(weightNum) ||
+      heightNum <= 0 ||
+      weightNum <= 0
+    ) {
+      Alert.alert("Error", "Height and weight must be positive numbers.");
+      return;
+    }
+
+    if (heightNum > 300) {
+      Alert.alert("Error", "Height must be 300 cm or less.");
+      return;
+    }
+
+    if (weightNum > 1000) {
+      Alert.alert("Error", "Weight must be 1000 kg or less.");
       return;
     }
 
@@ -58,8 +110,6 @@ export default function Register() {
 
       const data = await response.json();
 
-      console.log(data);
-
       if (data.exists) {
         Alert.alert("Error", "User already exists.");
         return;
@@ -71,8 +121,8 @@ export default function Register() {
         email,
         password,
         birthday,
-        height: Number(height),
-        weight: Number(weight),
+        height: heightNum,
+        weight: weightNum,
         gender,
       });
 
