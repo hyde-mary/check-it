@@ -338,4 +338,30 @@ const updateUser = async (req, res) => {
   }
 };
 
-module.exports = { getUsers, register, login, updateUser, getUserById };
+const checkEmail = async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: String(email) },
+    });
+
+    return res.json({ exists: !!user });
+  } catch (error) {
+    console.error("Update error: ", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+module.exports = {
+  getUsers,
+  register,
+  login,
+  updateUser,
+  getUserById,
+  checkEmail,
+};

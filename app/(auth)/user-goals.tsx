@@ -69,11 +69,21 @@ export default function UserGoals() {
 
       if (!response.ok) {
         Alert.alert("Error", data.error || "Something went wrong.");
+        return;
       }
 
-      // haba HAHA
-      await saveToken(data.token);
-      await saveUserInfo(data.userId);
+      if (data.token) {
+        await saveToken(data.token);
+      } else {
+        console.warn("No token received from API.");
+      }
+
+      if (data.userId) {
+        await saveUserInfo(data.userId);
+      } else {
+        console.warn("No userId received from API.");
+      }
+
       resetUserData();
       Alert.alert("Success", "User registered successfully!");
       router.replace("/");

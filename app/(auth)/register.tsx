@@ -25,6 +25,7 @@ export default function Register() {
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
   const [gender, setGender] = useState("Male");
+  const [loading, setLoading] = useState(false);
 
   const updateUserData = useRegisterStore((state) => state.updateUserData);
 
@@ -48,18 +49,40 @@ export default function Register() {
       return;
     }
 
-    updateUserData({
-      firstName,
-      lastName,
-      email,
-      password,
-      birthday,
-      height: Number(height),
-      weight: Number(weight),
-      gender,
-    });
+    try {
+      setLoading(true);
 
-    router.push("/activity-level");
+      const response = await fetch(
+        `http://10.0.2.2:3000/api/users/check-email?email=${email}`
+      );
+
+      const data = await response.json();
+
+      console.log(data);
+
+      if (data.exists) {
+        Alert.alert("Error", "User already exists.");
+        return;
+      }
+
+      updateUserData({
+        firstName,
+        lastName,
+        email,
+        password,
+        birthday,
+        height: Number(height),
+        weight: Number(weight),
+        gender,
+      });
+
+      router.push("/activity-level");
+    } catch (error) {
+      Alert.alert("Error", "Something went wrong. Please try again.");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -208,11 +231,19 @@ export default function Register() {
             </View>
 
             <TouchableOpacity
-              style={styles.button}
+              style={[styles.button, loading && styles.disabledButton]}
               onPress={handleRegister}
               activeOpacity={0.7}
+              disabled={loading}
             >
-              <Text style={styles.buttonText}>Continue</Text>
+              <Text
+                style={[
+                  styles.buttonText,
+                  loading && styles.disabledButtonText,
+                ]}
+              >
+                {loading ? "Loading..." : "Continue"}
+              </Text>
             </TouchableOpacity>
 
             <Link href="/login" asChild>
@@ -338,5 +369,11 @@ const styles = StyleSheet.create({
   loginLinkText: {
     color: "#ff9999",
     fontWeight: "500",
+  },
+  disabledButton: {
+    backgroundColor: "#ffcccc",
+  },
+  disabledButtonText: {
+    color: "#aaa",
   },
 });
