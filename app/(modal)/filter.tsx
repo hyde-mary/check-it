@@ -2,160 +2,174 @@ import {
   View,
   Text,
   StyleSheet,
-  Touchable,
   TouchableOpacity,
   FlatList,
-  ListRenderItem,
-  Button,
+  ActivityIndicator,
+  Image,
+  Dimensions,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import Colors from "../../constants/Colors";
 import { useNavigation } from "expo-router";
-import categories from "@/assets/data/filter.json";
 import { Ionicons } from "@expo/vector-icons";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+import getImageSrc from "@/utils/getImageSrc";
 
 interface Category {
+  id: number;
+  img: string;
   name: string;
-  count: number;
   checked?: boolean;
 }
 
-const ItemBox = () => (
-  <>
-    <View style={styles.itemContainer}>
-      <TouchableOpacity style={styles.item}>
-        <Ionicons name="arrow-down-outline" size={20} color={Colors.medium} />
-        <Text style={{ flex: 1 }}>Sort</Text>
-        <Ionicons name="chevron-forward" size={22} color={Colors.primary} />
-      </TouchableOpacity>
+const { width } = Dimensions.get("window");
+const CARD_SIZE = width * 0.9;
 
-      <TouchableOpacity style={styles.item}>
-        <Ionicons name="fast-food-outline" size={20} color={Colors.medium} />
-        <Text style={{ flex: 1 }}>Hygiene rating</Text>
-        <Ionicons name="chevron-forward" size={22} color={Colors.primary} />
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.item}>
-        <Ionicons name="pricetag-outline" size={20} color={Colors.medium} />
-        <Text style={{ flex: 1 }}>Offers</Text>
-        <Ionicons name="chevron-forward" size={22} color={Colors.primary} />
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.item}>
-        <Ionicons name="nutrition-outline" size={20} color={Colors.medium} />
-        <Text style={{ flex: 1 }}>Dietary</Text>
-        <Ionicons name="chevron-forward" size={22} color={Colors.primary} />
-      </TouchableOpacity>
+const FilterHeader = () => (
+  <View style={styles.headerContainer}>
+    <Text style={styles.title}>Filter Options</Text>
+    <View style={styles.filterControls}>
+      {[
+        { icon: "swap-vertical", label: "Sort" },
+        { icon: "funnel", label: "Filters" },
+        { icon: "refresh", label: "Reset" },
+      ].map((item) => (
+        <TouchableOpacity key={item.label} style={styles.controlButton}>
+          <Ionicons name={item.icon as any} size={20} color={Colors.primary} />
+          <Text style={styles.controlText}>{item.label}</Text>
+        </TouchableOpacity>
+      ))}
     </View>
-    <Text style={styles.header}>Categories</Text>
-  </>
+  </View>
 );
 
 const Filter = () => {
   const navigation = useNavigation();
-  const [items, setItems] = useState<Category[]>(categories);
-  const [selected, setSelected] = useState<Category[]>([]);
-  const flexWidth = useSharedValue(0);
-  const scale = useSharedValue(0);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const hasSelected = selected.length > 0;
-    const selectedItems = items.filter((item) => item.checked);
-    const newSelected = selectedItems.length > 0;
+    const abortController = new AbortController();
 
-    if (hasSelected !== newSelected) {
-      flexWidth.value = withTiming(newSelected ? 150 : 0);
-      scale.value = withTiming(newSelected ? 1 : 0);
-    }
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch("http://10.0.2.2:3000/api/categories/", {
+          signal: abortController.signal,
+        });
 
-    setSelected(selectedItems);
-  }, [items]);
+        if (!response.ok)
+          throw new Error(`Failed to fetch: ${response.status}`);
 
-  const handleClearAll = () => {
-    const updatedItems = items.map((item) => {
-      item.checked = false;
-      return item;
-    });
-    setItems(updatedItems);
+        const data: Category[] = await response.json();
+        setCategories(data.map((item) => ({ ...item, checked: false })));
+      } catch (err: any) {
+        if (err.name !== "AbortError") {
+          setError(err.message || "Failed to load categories");
+        }
+      } finally {
+        if (!abortController.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchCategories();
+    return () => abortController.abort();
+  }, []);
+
+  const handleToggle = (id: number) => {
+    setCategories((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, checked: !item.checked } : item
+      )
+    );
   };
 
-  const animatedStyles = useAnimatedStyle(() => {
-    return {
-      width: flexWidth.value,
-      opacity: flexWidth.value > 0 ? 1 : 0,
-    };
-  });
+  const selectedCount = categories.filter((item) => item.checked).length;
 
-  const animatedText = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }],
-    };
-  });
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
 
-  const renderItem: ListRenderItem<Category> = ({ item, index }) => (
-    <View style={styles.row}>
-      <Text style={styles.itemText}>
-        {item.name} ({item.count})
-      </Text>
-      <BouncyCheckbox
-        isChecked={items[index].checked}
-        fillColor={Colors.primary}
-        unFillColor="#fff"
-        useBuiltInState
-        iconStyle={{
-          borderColor: Colors.primary,
-          borderRadius: 4,
-          borderWidth: 2,
-        }}
-        innerIconStyle={{ borderColor: Colors.primary, borderRadius: 4 }}
-        onPress={() => {
-          const isChecked = items[index].checked;
-
-          const updatedItems = items.map((item) => {
-            if (item.name === items[index].name) {
-              item.checked = !isChecked;
-            }
-
-            return item;
-          });
-
-          setItems(updatedItems);
-        }}
-      />
-    </View>
-  );
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.error}>{error}</Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => setLoading(true)}
+        >
+          <Text style={styles.retryText}>Try Again</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <FlatList
-        data={items}
-        renderItem={renderItem}
-        ListHeaderComponent={<ItemBox />}
-      />
-      <View style={{ height: 76 }} />
-      <View style={styles.footer}>
-        <View style={styles.btnContainer}>
-          <Animated.View style={[animatedStyles, styles.outlineButton]}>
-            <TouchableOpacity onPress={handleClearAll}>
-              <Animated.Text style={[animatedText, styles.outlineButtonText]}>
-                Clear all
-              </Animated.Text>
-            </TouchableOpacity>
-          </Animated.View>
+        data={categories}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <View style={styles.checkboxContainer}>
+              <BouncyCheckbox
+                isChecked={item.checked}
+                fillColor={Colors.primary}
+                unFillColor="#FFFFFF"
+                iconStyle={{
+                  borderColor: Colors.primary,
+                  borderRadius: 4,
+                  borderWidth: 2,
+                }}
+                innerIconStyle={{
+                  borderColor: Colors.primary,
+                  borderRadius: 4,
+                }}
+                onPress={() => handleToggle(item.id)}
+              />
+            </View>
 
-          <TouchableOpacity
-            style={styles.fullButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.footerText}>Done</Text>
-          </TouchableOpacity>
-        </View>
+            <Text style={styles.categoryName}>{item.name}</Text>
+
+            <Image
+              source={getImageSrc(item.img)}
+              style={styles.categoryImage}
+              accessibilityLabel={item.name}
+            />
+          </View>
+        )}
+        ListHeaderComponent={<FilterHeader />}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      />
+
+      <View style={[styles.footer]}>
+        <TouchableOpacity
+          style={styles.clearButton}
+          onPress={() =>
+            setCategories((prev) =>
+              prev.map((item) => ({ ...item, checked: false }))
+            )
+          }
+        >
+          <Text style={styles.clearText}>
+            Clear Selections ({selectedCount})
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.doneButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.doneText}>Apply Filters</Text>
+          <Ionicons name="checkmark-circle" size={20} color="white" />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -164,85 +178,134 @@ const Filter = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
     backgroundColor: Colors.lightGrey,
+  },
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  error: {
+    color: Colors.warning,
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  retryButton: {
+    backgroundColor: Colors.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: "white",
+    fontWeight: "500",
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 100,
+  },
+  headerContainer: {
+    paddingVertical: 24,
+    backgroundColor: "white",
+    marginBottom: 16,
+    borderRadius: 12,
+    elevation: 2,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: Colors.mediumDark,
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  filterControls: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  controlButton: {
+    alignItems: "center",
+    padding: 10,
+  },
+  controlText: {
+    color: Colors.mediumDark,
+    fontSize: 12,
+    marginTop: 6,
+  },
+  card: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 10,
+    paddingLeft: 20,
+    paddingRight: 20,
+    backgroundColor: "white",
+    borderRadius: 8,
+    marginBottom: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  categoryImage: {
+    width: 50,
+    height: 50,
+    resizeMode: "cover",
+    borderRadius: 10,
+  },
+  categoryName: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "black",
+  },
+  checkbox: {
+    marginRight: 10,
   },
   footer: {
     position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 100,
-    backgroundColor: "#fff",
+    bottom: 30,
+    alignSelf: "center",
+    flexDirection: "row",
+    backgroundColor: "white",
+    borderRadius: 50,
+    elevation: 5,
+    overflow: "hidden",
     padding: 10,
-    elevation: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: {
-      width: 0,
-      height: -10,
-    },
   },
-  fullButton: {
-    backgroundColor: Colors.primary,
-    padding: 16,
-    alignItems: "center",
-    borderRadius: 8,
-    flex: 1,
-    height: 56,
+  clearButton: {
+    backgroundColor: Colors.lightGrey,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
   },
-  footerText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  itemContainer: {
-    backgroundColor: "#fff",
-    padding: 8,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  header: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 16,
-  },
-  item: {
-    flexDirection: "row",
-    gap: 20,
-    alignItems: "center",
-    backgroundColor: "#fff",
-    paddingVertical: 10,
-    borderColor: Colors.grey,
-    borderBottomWidth: 1,
-  },
-  itemText: {
-    flex: 1,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 10,
-    backgroundColor: "#fff",
-  },
-  btnContainer: {
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "center",
-  },
-  outlineButton: {
-    borderColor: Colors.primary,
-    borderWidth: 0.5,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 8,
-    height: 56,
-  },
-  outlineButtonText: {
+  clearText: {
     color: Colors.primary,
-    fontWeight: "bold",
-    fontSize: 16,
+    fontWeight: "600",
+  },
+  doneButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.primary,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    gap: 8,
+  },
+  doneText: {
+    color: "white",
+    fontWeight: "600",
+  },
+  textContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  checkboxContainer: {
+    width: 40,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 
