@@ -11,7 +11,7 @@ const getMealSuggestions = async (req, res) => {
       model: "gemini-1.5-flash-latest",
     });
 
-    console.log(userId);
+    // console.log(userId);
 
     let foods = null;
     let calories = null;
