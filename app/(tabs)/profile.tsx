@@ -150,7 +150,7 @@ const Profile = () => {
   const logout = async () => {
     await removeToken();
     await removeUserInfo();
-    router.replace("/");
+    router.replace("/landing");
   };
 
   if (!user) return <DotsLoader />;

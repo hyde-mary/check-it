@@ -110,7 +110,7 @@ const register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const userHeight = parseFloat(height) / 100;
+    const userHeight = parseFloat(height);
     const userWeight = parseFloat(weight);
     const userBirthday = new Date(birthday);
     const bmi = userWeight / (userHeight * userHeight);
