@@ -191,7 +191,7 @@ function RootLayoutNav() {
         <Stack.Screen
           name="(filter)/filtered-foods"
           options={{
-            headerTitle: "Filtered Foods",
+            headerTitle: "Foods Based on Category",
             headerShadowVisible: false,
             headerStyle: {
               backgroundColor: Colors.lightGrey,

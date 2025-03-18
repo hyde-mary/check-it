@@ -80,6 +80,7 @@ const getFoodsByCategories = async (req, res) => {
       },
       include: {
         restaurant: true,
+        category: true,
       },
     });
 

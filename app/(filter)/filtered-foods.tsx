@@ -6,12 +6,13 @@ import {
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
+  SectionList,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Colors from "@/constants/Colors";
 import getImageSrc from "@/utils/getImageSrc";
-import { Restaurant } from "@prisma/client";
+import { Category, Restaurant } from "@prisma/client";
 import { Ionicons } from "@expo/vector-icons";
 
 interface FoodItem {
@@ -19,7 +20,13 @@ interface FoodItem {
   name: string;
   img: string;
   categoryId: number;
+  category: Category;
   restaurant: Restaurant;
+}
+
+interface SectionData {
+  title: string;
+  data: FoodItem[];
 }
 
 const FilteredFoods = () => {
@@ -28,7 +35,7 @@ const FilteredFoods = () => {
     selectedCategoryIds?: string;
   }>();
 
-  const [foods, setFoods] = useState<FoodItem[]>([]);
+  const [sections, setSections] = useState<SectionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,8 +46,26 @@ const FilteredFoods = () => {
           `http://10.0.2.2:3000/api/foods/categories/${selectedCategoryIds}`
         );
         if (!response.ok) throw new Error("Failed to fetch foods");
+
         const data: FoodItem[] = await response.json();
-        setFoods(data);
+
+        // Group foods by category
+        const grouped = data.reduce((acc: Record<string, FoodItem[]>, food) => {
+          const categoryName = food.category.name;
+          if (!acc[categoryName]) {
+            acc[categoryName] = [];
+          }
+          acc[categoryName].push(food);
+          return acc;
+        }, {});
+
+        // Convert to section list format
+        const sectionData = Object.entries(grouped).map(([title, data]) => ({
+          title,
+          data,
+        }));
+
+        setSections(sectionData);
       } catch (err: any) {
         setError(err.message || "Failed to load foods");
       } finally {
@@ -69,27 +94,40 @@ const FilteredFoods = () => {
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={foods}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => router.push(`/dish/${item.id}`)}
-          >
-            <View style={styles.cardDescription}>
-              <Image source={getImageSrc(item.img)} style={styles.image} />
-              <View style={styles.description}>
-                <Text style={styles.foodName}>{item.name}</Text>
-                <Text style={styles.restaurantName}>
-                  {item.restaurant.name}
-                </Text>
+      {sections.length > 0 ? (
+        <SectionList
+          sections={sections}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => router.push(`/dish/${item.id}`)}
+            >
+              <View style={styles.cardContent}>
+                <Image source={getImageSrc(item.img)} style={styles.image} />
+                <View style={styles.textContainer}>
+                  <Text style={styles.foodName}>{item.name}</Text>
+                  <Text style={styles.restaurantName}>
+                    {item.restaurant.name}
+                  </Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={24}
+                  color={Colors.medium}
+                />
               </View>
-            </View>
-            <Ionicons name="chevron-forward" size={24} color="gray" />
-          </TouchableOpacity>
-        )}
-      />
+            </TouchableOpacity>
+          )}
+          renderSectionHeader={({ section: { title } }) => (
+            <Text style={styles.sectionHeader}>{title}</Text>
+          )}
+          contentContainerStyle={styles.listContent}
+        />
+      ) : (
+        <Text style={styles.noResults}>No matching foods found</Text>
+      )}
+
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Text style={styles.backText}>Back to Filters</Text>
       </TouchableOpacity>
@@ -101,7 +139,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.lightGrey,
-    padding: 16,
   },
   center: {
     flex: 1,
@@ -109,47 +146,69 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   error: {
-    color: "red",
+    color: Colors.warning,
+    fontSize: 16,
+    marginBottom: 20,
   },
   card: {
+    backgroundColor: "#fff",
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+    elevation: 2,
+  },
+  cardContent: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "white",
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 10,
+    padding: 16,
   },
   image: {
-    width: 50,
-    height: 50,
+    width: 60,
+    height: 60,
     borderRadius: 8,
+    marginRight: 16,
+  },
+  textContainer: {
+    flex: 1,
   },
   foodName: {
-    marginLeft: 10,
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "600",
+    color: Colors.mediumDark,
+    marginBottom: 4,
+  },
+  restaurantName: {
+    fontSize: 14,
+    color: Colors.mediumDark,
+  },
+  sectionHeader: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: Colors.primary,
+    padding: 16,
+    backgroundColor: Colors.lightGrey,
   },
   backButton: {
     backgroundColor: Colors.primary,
-    padding: 15,
-    alignItems: "center",
-    marginTop: 20,
+    padding: 16,
+    margin: 16,
     borderRadius: 8,
+    alignItems: "center",
   },
   backText: {
-    color: "white",
-    fontWeight: "bold",
-  },
-  description: {
-    flexDirection: "column",
-  },
-  restaurantName: {
-    marginLeft: 10,
+    color: "#fff",
+    fontWeight: "600",
     fontSize: 16,
   },
-  cardDescription: {
-    flexDirection: "row",
+  noResults: {
+    flex: 1,
+    textAlign: "center",
+    marginTop: 40,
+    fontSize: 16,
+    color: Colors.mediumDark,
+  },
+  listContent: {
+    paddingBottom: 100,
   },
 });
 

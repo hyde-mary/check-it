@@ -1,7 +1,15 @@
-import { View, Text, ScrollView, StyleSheet, Image } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+} from "react-native";
 import React from "react";
 import getImageSource from "@/utils/getImageSrc";
 import { Category } from "@prisma/client";
+import { router } from "expo-router";
 
 type CategoriesDataType = {
   id: string;
@@ -22,7 +30,15 @@ const Categories = ({ categories }: { categories: Category[] }) => {
       }}
     >
       {categories.map((category: Category) => (
-        <View style={styles.categoryCard} key={category.id}>
+        <TouchableOpacity
+          style={styles.categoryCard}
+          key={category.id}
+          onPress={() => {
+            router.push(
+              `/(filter)/filtered-foods?selectedCategoryIds=${category.id}`
+            );
+          }}
+        >
           <Image
             source={getImageSource(category.img)}
             style={styles.image}
@@ -31,7 +47,7 @@ const Categories = ({ categories }: { categories: Category[] }) => {
           <Text style={styles.categoryText} numberOfLines={2}>
             {category.name}
           </Text>
-        </View>
+        </TouchableOpacity>
       ))}
     </ScrollView>
   );
