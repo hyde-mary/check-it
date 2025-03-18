@@ -85,7 +85,7 @@ export default function AiSuggestion() {
       }
 
       const mealSuggestion = await response.json();
-      console.log(mealSuggestion);
+      // console.log(mealSuggestion);
       setSuggestion(mealSuggestion);
     } catch (error) {
       console.error(
