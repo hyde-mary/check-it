@@ -15,30 +15,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/Colors";
 import BottomSheet from "../sheets/BottomSheet";
 
-const SearchBar = () => (
-  <View style={styles.searchContainer}>
-    <View style={styles.searchSection}>
-      <View style={styles.searchField}>
-        <Ionicons
-          style={styles.searchIcon}
-          name="search-outline"
-          size={20}
-          color={Colors.medium}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Restaurants, groceries, dishes"
-        />
-      </View>
-      <Link href={"/(modal)/filter"} asChild>
-        <TouchableOpacity style={styles.optionButton}>
-          <Ionicons name="options-outline" size={20} color={Colors.primary} />
-        </TouchableOpacity>
-      </Link>
-    </View>
-  </View>
-);
-
 const CustomHeader = () => {
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const insets = useSafeAreaInsets();
@@ -70,8 +46,6 @@ const CustomHeader = () => {
           </View>
         </TouchableOpacity>
       </View>
-
-      <SearchBar />
     </SafeAreaView>
   );
 };
@@ -111,35 +85,6 @@ const styles = StyleSheet.create({
   },
   profileButton: {
     backgroundColor: Colors.lightGrey,
-    padding: 10,
-    borderRadius: 50,
-  },
-  searchContainer: {
-    backgroundColor: "#fff",
-    paddingBottom: 10,
-    paddingTop: 10,
-  },
-  searchSection: {
-    flexDirection: "row",
-    gap: 10,
-    paddingHorizontal: 20,
-    alignItems: "center",
-  },
-  searchField: {
-    flex: 1,
-    backgroundColor: Colors.lightGrey,
-    borderRadius: 8,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  input: {
-    padding: 10,
-    color: Colors.mediumDark,
-  },
-  searchIcon: {
-    paddingLeft: 10,
-  },
-  optionButton: {
     padding: 10,
     borderRadius: 50,
   },

@@ -6,7 +6,7 @@ import {
   Image,
   TouchableOpacity,
 } from "react-native";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import getImageSource from "@/utils/getImageSrc";
 import { Category } from "@prisma/client";
 import { router } from "expo-router";
@@ -20,8 +20,17 @@ type CategoriesDataType = {
 const Categories = ({ categories }: { categories: Category[] }) => {
   if (!categories) return null;
 
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({ x: 0, animated: true });
+    }
+  }, [categories]);
+
   return (
     <ScrollView
+      ref={scrollViewRef}
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={{

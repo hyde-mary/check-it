@@ -6,7 +6,7 @@ import {
   Image,
   TouchableOpacity,
 } from "react-native";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Link } from "expo-router";
 import { Restaurant } from "@prisma/client";
 import getImageSrc from "@/utils/getImageSrc";
@@ -21,6 +21,14 @@ const RestaurantsNear = ({
     return <Text style={styles.noData}>No restaurants available</Text>;
   }
 
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({ x: 0, animated: true });
+    }
+  }, [restaurants]);
+
   const top3Restaurants = restaurants
     .sort((a, b) => a.distance - b.distance)
     .slice(0, 3);
@@ -28,6 +36,7 @@ const RestaurantsNear = ({
   return (
     <ScrollView
       horizontal
+      ref={scrollViewRef}
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={{
         padding: 15,

@@ -29,6 +29,7 @@ import getImageSrc from "@/utils/getImageSrc";
 import Toast from "react-native-toast-message";
 import useBasketStore from "@/store/useBasketStore";
 import { SafeAreaView } from "react-native-safe-area-context";
+import SearchBar from "@/components/index/SearchBar";
 // import { getUserInfo } from "@/utils/sessionManager";
 
 type Food = {
@@ -60,6 +61,7 @@ export default function Page() {
   );
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const [receiveLoading, setReceiveLoading] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const { items, total } = useBasketStore();
 
   useEffect(() => {
@@ -184,23 +186,33 @@ export default function Page() {
     }
   };
 
+  const filteredRestaurants = restaurants?.filter((restaurant) =>
+    restaurant.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredCategories = categories
+    ? categories.filter((category) =>
+        category.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
+
   if (!categories || !restaurants) return <DotsLoader />;
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
         contentContainerStyle={{
-          paddingTop: 20,
           paddingBottom: pendingOrders?.length ? 125 : 40,
         }}
       >
-        <Categories categories={categories} />
+        <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+        <Categories categories={filteredCategories ?? null} />
         <Text style={styles.header}>Top Picks in your Neighbourhood</Text>
-        <RestaurantsPicks restaurants={restaurants} />
+        <RestaurantsPicks restaurants={filteredRestaurants ?? null} />
         <Text style={styles.header}>
           Offers near you (Top 3 Based on Distance)
         </Text>
-        <RestaurantsNear restaurants={restaurants} />
+        <RestaurantsNear restaurants={filteredRestaurants ?? null} />
       </ScrollView>
 
       {items > 0 && (

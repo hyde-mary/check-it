@@ -6,7 +6,7 @@ import {
   Image,
   TouchableOpacity,
 } from "react-native";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Link, router } from "expo-router";
 import getImageSrc from "@/utils/getImageSrc";
 import Colors from "@/constants/Colors";
@@ -21,10 +21,18 @@ const RestaurantsPicks = ({
     return <Text style={styles.noData}>No restaurants available</Text>;
   }
 
+  const scrollViewRef = useRef<ScrollView>(null);
+
   // Calculate mean rating across all restaurants
   const meanRating =
     restaurants.reduce((acc, r) => acc + r.rating, 0) / restaurants.length;
   const minRatings = 50;
+
+  useEffect(() => {
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({ x: 0, animated: true });
+    }
+  }, [restaurants]);
 
   const sortedRestaurants = [...restaurants]
     .map((restaurant) => {
@@ -40,6 +48,7 @@ const RestaurantsPicks = ({
 
   return (
     <ScrollView
+      ref={scrollViewRef}
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={{ padding: 15 }}
