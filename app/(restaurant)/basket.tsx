@@ -164,6 +164,18 @@ const Basket = () => {
           return;
         }
 
+        if (data.error === "No saved address found for this user") {
+          Toast.show({
+            type: "error",
+            text1: "No Saved Address for this User",
+            text2:
+              "To Order Food, Please add an Address first in your profile!",
+            position: "top",
+            visibilityTime: 2000,
+          });
+          return;
+        }
+
         throw new Error("Something went wrong, please try again.");
       }
 

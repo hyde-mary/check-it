@@ -38,6 +38,22 @@ const orderFood = async (req, res) => {
       return res.status(400).json({ error: "Invalid input data" });
     }
 
+    const address = await prisma.address.findFirst({
+      where: { userId },
+    });
+
+    if (
+      !address ||
+      !address.street ||
+      !address.city ||
+      !address.state ||
+      !address.zipCode
+    ) {
+      return res.status(400).json({
+        error: "No saved address found for this user",
+      });
+    }
+
     const firstFoodItem = foodItems[0];
     const food = await prisma.food.findUnique({
       where: { id: firstFoodItem.foodId },
