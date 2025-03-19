@@ -52,6 +52,12 @@ const getUserById = async (req, res) => {
   }
 };
 
+const calculateBMI = (weight, height) => {
+  const heightInMeters = height / 100;
+  const bmi = weight / (heightInMeters * heightInMeters);
+  return bmi;
+};
+
 const calculateCaloricIntake = (user) => {
   const { birthday, gender, weight, height, activityLevel, goals } = user;
 
@@ -113,7 +119,7 @@ const register = async (req, res) => {
     const userHeight = parseFloat(height);
     const userWeight = parseFloat(weight);
     const userBirthday = new Date(birthday);
-    const bmi = userWeight / (userHeight * userHeight);
+    const bmi = calculateBMI(weight, height);
 
     const newUser = await prisma.user.create({
       data: {
@@ -223,6 +229,24 @@ const updateUser = async (req, res) => {
       return res.status(400).json({ error: "User ID is required." });
     }
 
+    // current caloric intake = we can use this to get the current caloric intake of the user
+    // meaning, when the user consumed a food already
+    const currentCaloricIntake = await prisma.userCaloricIntake.findUnique({
+      where: { userId: id },
+    });
+
+    console.log("current caloric intake: ", currentCaloricIntake);
+
+    const user = await prisma.user.findUnique({
+      where: { id },
+    });
+
+    // now we get the defaultCaloricintake of the user before update.
+    const defaultCaloricintake = calculateCaloricIntake(user);
+
+    console.log("default caloric intake: ", defaultCaloricintake);
+
+    // now we update the user
     const updatedUser = await prisma.user.update({
       where: { id },
       data: {
@@ -236,20 +260,78 @@ const updateUser = async (req, res) => {
       },
     });
 
-    const { caloricIntake, protein, carbs, fat } = calculateCaloricIntake({
-      birthday: updatedUser.birthday,
-      gender: updatedUser.gender,
-      weight: updatedUser.weight,
-      height: updatedUser.height,
-      activityLevel: updatedUser.activityLevel,
-      goals: updatedUser.goals,
-    });
+    // then we get the updated caloric intake.
+    const updatedDefaultCaloricIntake = calculateCaloricIntake(updatedUser);
 
-    await prisma.userCaloricIntake.upsert({
-      where: { userId: id },
-      update: { caloricIntake, protein, carbs, fat },
-      create: { userId: id, caloricIntake, protein, carbs, fat },
-    });
+    console.log(
+      "updated default caloric intake: ",
+      updatedDefaultCaloricIntake
+    );
+
+    if (
+      currentCaloricIntake.caloricIntake !== defaultCaloricintake.caloricIntake
+    ) {
+      // so what this means is that, the user consumed a food
+      // so if the user consumed a food, we need to only add or subtract the difference between the new default and the default
+      if (
+        defaultCaloricintake.caloricIntake <
+        updatedDefaultCaloricIntake.caloricIntake
+      ) {
+        // so if it is less than, it means the caloric intake increased
+        await prisma.userCaloricIntake.update({
+          where: { userId: id },
+          data: {
+            caloricIntake:
+              currentCaloricIntake.caloricIntake +
+              (updatedDefaultCaloricIntake.caloricIntake -
+                defaultCaloricintake.caloricIntake),
+            protein:
+              currentCaloricIntake.protein +
+              (updatedDefaultCaloricIntake.protein -
+                defaultCaloricintake.protein),
+            carbs:
+              currentCaloricIntake.carbs +
+              (updatedDefaultCaloricIntake.carbs - defaultCaloricintake.carbs),
+            fat:
+              currentCaloricIntake.fat +
+              (updatedDefaultCaloricIntake.fat - defaultCaloricintake.fat),
+          },
+        });
+      } else {
+        // it means it decreased. So we do the same thing but this time we just inverse it.
+        await prisma.userCaloricIntake.update({
+          where: { userId: id },
+          data: {
+            caloricIntake:
+              currentCaloricIntake.caloricIntake -
+              (defaultCaloricintake.caloricIntake -
+                updatedDefaultCaloricIntake.caloricIntake),
+            protein:
+              currentCaloricIntake.protein -
+              (defaultCaloricintake.protein -
+                updatedDefaultCaloricIntake.protein),
+            carbs:
+              currentCaloricIntake.carbs -
+              (defaultCaloricintake.carbs - updatedDefaultCaloricIntake.carbs),
+            fat:
+              currentCaloricIntake.fat -
+              (defaultCaloricintake.fat - updatedDefaultCaloricIntake.fat),
+          },
+        });
+      }
+    } else {
+      // since the default and before caloric intake is the same, the user has not consumed a food
+      // we can just replace the actual caloric intake of the user to the updated caloric intake
+      await prisma.userCaloricIntake.update({
+        where: { userId: id },
+        data: {
+          caloricIntake: updatedDefaultCaloricIntake.caloricIntake,
+          protein: updatedDefaultCaloricIntake.protein,
+          carbs: updatedDefaultCaloricIntake.carbs,
+          fat: updatedDefaultCaloricIntake.fat,
+        },
+      });
+    }
 
     if (
       paymentOption?.cardNumber &&
