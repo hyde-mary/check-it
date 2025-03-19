@@ -26,6 +26,7 @@ import {
   UserCaloricIntake,
 } from "@prisma/client";
 import { DotsLoader } from "@/components/Loading";
+import Toast from "react-native-toast-message";
 
 type UserData = Omit<User, "password"> & {
   paymentOption?: PaymentOption | null;
@@ -148,8 +149,22 @@ const Basket = () => {
         }
       );
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Network Error");
+        if (data.error === "No saved card found for this user") {
+          Toast.show({
+            type: "error",
+            text1: "No Saved Card for this User",
+            text2:
+              "To Use this Payment Method! Please add a payment option first in your profile!",
+            position: "top",
+            visibilityTime: 2000,
+          });
+          return;
+        }
+
+        throw new Error("Something went wrong, please try again.");
       }
 
       clearBasket();
