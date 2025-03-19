@@ -333,67 +333,59 @@ const updateUser = async (req, res) => {
       });
     }
 
-    if (
-      paymentOption?.cardNumber &&
-      paymentOption?.expirationDate &&
-      paymentOption?.cardCv
-    ) {
-      const existingPaymentOption = await prisma.paymentOption.findFirst({
-        where: { userId: id },
-      });
+    if (paymentOption) {
+      const { cardNumber, expirationDate, cardCv } = paymentOption;
 
-      let expirationDateISO;
+      if (cardNumber || expirationDate || cardCv) {
+        let expirationDateISO;
+        if (expirationDate instanceof Date) {
+          expirationDateISO = expirationDate;
+        } else if (!isNaN(Date.parse(expirationDate))) {
+          expirationDateISO = new Date(expirationDate);
+        } else {
+          expirationDateISO = new Date(`${expirationDate}-01T00:00:00.000Z`);
+        }
 
-      // If expirationDate is a Date object, keep it.
-      if (paymentOption.expirationDate instanceof Date) {
-        expirationDateISO = paymentOption.expirationDate;
-      }
-      // If expirationDate is an ISO string (from DB), convert it.
-      else if (!isNaN(Date.parse(paymentOption.expirationDate))) {
-        expirationDateISO = new Date(paymentOption.expirationDate);
-      }
-      // If it's a "yyyy-mm" string, format it.
-      else {
-        expirationDateISO = new Date(
-          `${paymentOption.expirationDate}-01T00:00:00.000Z`
-        );
-      }
+        if (!expirationDateISO || isNaN(expirationDateISO.getTime())) {
+          return res
+            .status(400)
+            .json({ error: "Invalid expiration date format." });
+        }
 
-      // Ensure the date is valid before proceeding
-      if (!expirationDateISO || isNaN(expirationDateISO.getTime())) {
-        return res
-          .status(400)
-          .json({ error: "Invalid expiration date format." });
-      }
+        const existingPaymentOption = await prisma.paymentOption.findFirst({
+          where: { userId: id },
+        });
 
-      updatedPaymentOption = await prisma.paymentOption.upsert({
-        where: existingPaymentOption
-          ? { id: existingPaymentOption.id }
-          : { id: -1 },
-        update: {
-          cardNumber: paymentOption.cardNumber,
-          expirationDate: expirationDateISO,
-          cardCv: paymentOption.cardCv,
-          cardholderName: `${updatedUser.firstName} ${updatedUser.lastName}`,
-        },
-        create: {
-          userId: id,
-          cardNumber: paymentOption.cardNumber,
-          expirationDate: expirationDateISO,
-          cardCv: paymentOption.cardCv,
-          cardholderName: `${updatedUser.firstName} ${updatedUser.lastName}`,
-        },
-      });
+        if (existingPaymentOption) {
+          await prisma.paymentOption.update({
+            where: { id: existingPaymentOption.id },
+            data: {
+              cardNumber,
+              expirationDate: expirationDateISO,
+              cardCv,
+              cardholderName: `${updatedUser.firstName} ${updatedUser.lastName}`,
+            },
+          });
+        } else {
+          await prisma.paymentOption.create({
+            data: {
+              userId: id,
+              cardNumber,
+              expirationDate: expirationDateISO,
+              cardCv,
+              cardholderName: `${updatedUser.firstName} ${updatedUser.lastName}`,
+            },
+          });
+        }
+      } else {
+        await prisma.paymentOption.deleteMany({
+          where: { userId: id },
+        });
+      }
     }
 
-    let updatedAddress = null;
-    if (
-      address?.street &&
-      address?.city &&
-      address?.state &&
-      address?.zipCode
-    ) {
-      updatedAddress = await prisma.address.upsert({
+    if (address) {
+      await prisma.address.upsert({
         where: { userId: id },
         update: {
           street: address.street,
@@ -408,6 +400,10 @@ const updateUser = async (req, res) => {
           state: address.state,
           zipCode: address.zipCode,
         },
+      });
+    } else {
+      await prisma.address.deleteMany({
+        where: { userId: id },
       });
     }
 
